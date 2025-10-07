@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
-from decouple import config
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,28 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "0.0.0.0",
-]
-
-INTERNAL_IPS = [
-    "127.0.0.1",
-    "0.0.0.0",
-]
-
-if DEBUG:
-    import socket
-    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-    INTERNAL_IPS.append("10.0.2.2")
-    INTERNAL_IPS.extend(
-        [ip[: ip.rfind(".")] + ".1" for ip in ips]
-    )
 
 
 # Application definition
@@ -55,15 +34,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Приложения
-    'apps.advertisements.apps.AdvertisementsConfig',
-    'apps.common.apps.CommonConfig',
-    'apps.contracts.apps.ContractsConfig',
-    'apps.customers.apps.CustomersConfig',
-    'apps.leads.apps.LeadsConfig',
-    'apps.products.apps.ProductsConfig',
-    'apps.users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -147,10 +117,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-# Кастомные настройки
-# ==============================================================================
-
-# Указываем Django использовать кастомную модель пользователя
-AUTH_USER_MODEL = 'users.User'
