@@ -7,7 +7,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.db import models
 
-from apps.common.utils import create_image_directory_path
+from apps.common.utils import create_dynamic_upload_path
 from apps.common.validators import validate_image_size
 
 
@@ -49,7 +49,7 @@ class Profile(models.Model):
     position = models.CharField(max_length=200, blank=True, verbose_name="Должность")
 
     photo = models.ImageField(
-        upload_to=create_image_directory_path,
+        upload_to=create_dynamic_upload_path,
         blank=True,
         null=True,
         verbose_name="Фото",
