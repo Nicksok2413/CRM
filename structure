@@ -1,0 +1,13 @@
+crm_project/
+├── apps/
+│   ├── __init__.py
+│   ├── common/
+│   ├── users/
+│   ├── products/
+│   ├── advertisements/
+│   ├── leads/
+│   ├── contracts/
+│   └── customers/
+├── config/
+│   └── ...
+└── manage.py
