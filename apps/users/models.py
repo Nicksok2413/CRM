@@ -1,6 +1,8 @@
 """
 Модуль содержит кастомную модель пользователя.
 """
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -36,8 +38,9 @@ class Profile(models.Model):
     не связанную напрямую с аутентификацией.
     """
     user = models.OneToOneField(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        primary_key=True,
         related_name='profile',
         verbose_name="Пользователь"
     )
