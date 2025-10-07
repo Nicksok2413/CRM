@@ -1,3 +1,39 @@
+"""
+Модели для приложения contracts (контракты).
+"""
+
 from django.db import models
 
-# Create your models here.
+from apps.common.models import BaseModel
+from apps.common.utils import create_dynamic_upload_path
+from apps.products.models import Service
+
+
+class Contract(BaseModel):
+    """
+    Модель для хранения информации о контрактах.
+    """
+    name = models.CharField(max_length=200, verbose_name="Название контракта")
+    service = models.ForeignKey(
+        Service,
+        on_delete=models.PROTECT,  # Запрещаем удалять услугу, если по ней есть контракты
+        related_name='contracts',
+        verbose_name="Предоставляемая услуга"
+    )
+    document = models.FileField(
+        upload_to=create_dynamic_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="Файл с документом"
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Сумма")
+    start_date = models.DateField(verbose_name="Дата заключения")
+    end_date = models.DateField(verbose_name="Дата окончания")
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        verbose_name: str = "Контракт"
+        verbose_name_plural: str = "Контракты"
+        ordering = ['-start_date']
