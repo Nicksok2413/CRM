@@ -25,12 +25,17 @@ class User(AbstractUser):
     def __str__(self) -> str:
         """
         Возвращает строковое представление пользователя.
-        Если ФИО заполнено, возвращает его, иначе - username.
+        Приоритет: Полное ФИО -> Фамилия и Имя -> username.
         """
-        if self.first_name and self.last_name and self.patronymic:
-            return f"{self.last_name} {self.first_name} {self.patronymic}"
-        elif self.first_name and self.last_name:
-            return f"{self.last_name} {self.first_name}"
+        # Собираем части имени, которые не являются пустыми строками
+        full_name_parts = [self.last_name, self.first_name, self.patronymic]
+        valid_parts = [part for part in full_name_parts if part]
+
+        # Если есть хотя бы Фамилия и Имя, соединяем их
+        if len(valid_parts) >= 2:
+            return " ".join(valid_parts)
+
+        # В противном случае возвращаем username
         return self.username
 
 
