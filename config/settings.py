@@ -26,6 +26,23 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "0.0.0.0",
+]
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+    "0.0.0.0",
+]
+
+if DEBUG:
+    import socket
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS.append("10.0.2.2")
+    INTERNAL_IPS.extend(
+        [ip[: ip.rfind(".")] + ".1" for ip in ips]
+    )
 
 # Application definition
 
@@ -82,11 +99,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT', cast=int), # `cast=int` преобразует строку из .env в число
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -128,3 +148,30 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ======================================================================
+# КАСТОМНЫЕ НАСТРОЙКИ ПРОЕКТА
+# ======================================================================
+
+# Указываем Django использовать кастомную модель пользователя
+AUTH_USER_MODEL = 'users.User'
+
+
+# ======================================================================
+# НАСТРОЙКИ ТЕЛЕФОННЫХ НОМЕРОВ
+# ======================================================================
+
+# Регион по умолчанию для парсинга номеров без кода страны (ISO 3166-1 alpha-2).
+# 'BY' - Беларусь, 'RU' - Россия, 'KZ' - Казахстан.
+DEFAULT_PHONE_REGION = 'BY'
+
+
+# ======================================================================
+# БИЗНЕС-КОНСТАНТЫ ПРОЕКТА
+# ======================================================================
+
+# Максимальный размер загружаемого изображения (в МБ)
+MAX_IMAGE_SIZE_MB = 2
+
+# Максимальный размер загружаемого документа (в МБ)
+MAX_DOCUMENT_SIZE_MB = 10
