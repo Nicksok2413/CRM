@@ -19,8 +19,9 @@ def create_superuser_and_groups(apps, schema_editor):
     # 1. Создание суперпользователя
     # =========================================================================
 
-    # Получаем модель User, актуальную для данной миграции.
+    # Получаем модели User и Profile, актуальные для данной миграции.
     User = apps.get_model('users', 'User')
+    Profile = apps.get_model('users', 'Profile')
 
     # Используем decouple.config() для чтения из .env
     admin_username = config('ADMIN_USERNAME', default='admin')
@@ -38,10 +39,8 @@ def create_superuser_and_groups(apps, schema_editor):
                     password=admin_password
                 )
 
-                # Профиль был создан автоматически благодаря сигналу.
-                # Получаем его и добавляем нужные данные.
-                admin_user.profile.position = 'Администратор'
-                admin_user.profile.save()
+                # Создаем профиль суперпользователю, потому что сигнал не сработает
+                Profile.objects.create(user=admin_user, position='Администратор')
 
                 print(f"\n  Суперпользователь '{admin_username}' и его профиль успешно созданы.")
             else:
