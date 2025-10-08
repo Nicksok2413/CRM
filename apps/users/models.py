@@ -27,7 +27,9 @@ class User(AbstractUser):
         Возвращает строковое представление пользователя.
         Если ФИО заполнено, возвращает его, иначе - username.
         """
-        if self.first_name and self.last_name:
+        if self.first_name and self.last_name and self.patronymic:
+            return f"{self.last_name} {self.first_name} {self.patronymic}"
+        elif self.first_name and self.last_name:
             return f"{self.last_name} {self.first_name}"
         return self.username
 
