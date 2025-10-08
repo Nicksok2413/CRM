@@ -12,7 +12,7 @@ class AdCampaignAdmin(admin.ModelAdmin):
     """
     Административный класс для модели AdCampaign.
     """
-    #Поля для отображения в списке всех рекламных кампании, включая связанную услугу.
+    # Поля для отображения в списке всех рекламных кампании, включая связанную услугу.
     list_display = ('name', 'service', 'channel', 'budget')
 
     # Оптимизация запросов: при загрузке списка рекламных компаний
@@ -24,5 +24,5 @@ class AdCampaignAdmin(admin.ModelAdmin):
     search_fields = ('name', 'channel')
 
     # Фильтры.
-    # Фильтрация по ForeignKey (`service`) автоматически создаст список всех услуг для выбора.
+    # Фильтрация по ForeignKey (`service`) создаст список всех услуг для выбора.
     list_filter = ('channel', 'service')
