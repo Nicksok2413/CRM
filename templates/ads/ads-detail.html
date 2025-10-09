@@ -3,6 +3,9 @@
 {% block content %}
 <h2 class="fw-bold">Детальная информация о рекламной компании</h2>
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
+    <div class="hstack gap-3 pb-4">
+        <a href="{% url 'ads:list' %}" class="btn btn-success p-2">К списку рекламных компаний</a>
+    </div>
     <div class="col"></div>
     <div class="col">
         <div class="card border-dark shadow" style="background: #eee">
@@ -11,7 +14,7 @@
                 <p class="card-text">{{ object.product.name }}</p>
                 <div class="d-flex justify-content-end fw-bold">{{ object.budget }}руб</div>
                 <div class="d-flex justify-content-center fw-bold">
-                    <a href="/ads/{{ object.pk }}/edit" class="btn btn-primary">Редактировать</a>
+                    <a href="{% url 'ads:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
                 </div>
             </div>
         </div>
