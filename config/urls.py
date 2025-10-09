@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import path, include
 
@@ -28,6 +29,9 @@ urlpatterns = [
     # Все остальные URL приложения будут обрабатываться в apps.users.urls
     # Подключаем их к корневому пути ''
     path('', include('apps.users.urls')),
+
+    # Маршрут для приложения advertisements ("Рекламные кампании")
+    path('ads/', include('apps.advertisements.urls')),
 
     # Маршрут для приложения products ("Услуги")
     path('products/', include('apps.products.urls')),
