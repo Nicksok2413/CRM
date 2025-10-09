@@ -1,9 +1,27 @@
-asgiref==3.10.0
+# ========================
+# Production Dependencies
+# ========================
+
+# Веб-фреймворк
 Django==5.2.7
-phonenumberslite==9.0.15
-pillow==11.3.0
-psycopg==3.2.10
-psycopg-binary==3.2.10
+
+# Веб-сервер
+# gunicorn
+
+# Драйвер PostgreSQL
+psycopg[binary]==3.2.10
+
+# Переменные окружения
 python-decouple==3.8
-sqlparse==0.5.3
-typing_extensions==4.15.0
+
+# Обработка изображений (для ImageField)
+pillow==11.3.0
+
+# Валидация и анализ телефонных номеров
+phonenumberslite==9.0.15
+
+# Логирование
+# loguru
+
+# Мониторинг
+# sentry-sdk
