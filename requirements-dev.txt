@@ -6,8 +6,8 @@
 -r requirements.txt
 
 # Генерация тестовых данных
-factory-boy
-Faker
+factory_boy==3.3.3
+Faker==37.11.0
 
 # Тестирование
 # pytest
