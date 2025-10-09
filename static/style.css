@@ -40,3 +40,17 @@ body {
     float: left;
     font-size: 9rem;
 }
+
+/* Стили для кнопки выхода, чтобы она выглядела как ссылка в меню */
+.bar-item.btn-link {
+    color: rgb(85, 83, 83);
+    text-align: left;
+    border: none;
+    border-radius: 0;
+}
+
+.bar-item.btn-link:hover {
+    color: #000;
+    background: #eee;
+    text-decoration: none;
+}

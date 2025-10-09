@@ -50,9 +50,16 @@
             <li>
                 <hr>
             </li>
-            <li><a href="/accounts/logout" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-sign-out-alt"></i></span><span class="px-1"> Выход</span>
-            </a></li>
+            <li>
+                <!-- Оборачиваем кнопку в форму, отправляющую POST-запрос на URL выхода -->
+                <form id="logout-form" method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <!-- Кнопку стилизуем так, чтобы она выглядела как пункт меню -->
+                    <button type="submit" class="bar-item text-decoration-none px-3 py-3 d-block btn btn-link text-start w-100">
+                        <span><i class="fas fa-sign-out-alt"></i></span><span class="px-1"> Выход</span>
+                    </button>
+                </form>
+            </li>
         </ul>
     </div>
     <div class="content px-3 pt-4">
