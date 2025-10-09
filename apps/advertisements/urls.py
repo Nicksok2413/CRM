@@ -8,7 +8,9 @@ from .views import (
     AdCampaignUpdateView,
 )
 
-app_name = 'ads'  # Используем 'ads', как в шаблонах
+# Пространство имен для URL-адресов этого приложения
+# Позволит использовать, например, `{% url 'ads:list' %}` в шаблонах
+app_name = 'ads'
 
 urlpatterns = [
     path('', AdCampaignListView.as_view(), name='list'),
