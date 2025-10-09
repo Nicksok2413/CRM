@@ -4,7 +4,7 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from .forms import AdCampaignForm
@@ -19,12 +19,27 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     context_object_name = 'ads'
     permission_required = 'advertisements.view_adcampaign'
 
+    def get_queryset(self):
+        """
+        Переопределяем queryset для оптимизации.
+        Используем select_related для подгрузки связанных услуг одним запросом.
+        """
+        return super().get_queryset().select_related('service')
+
 
 class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     """Представление для детального просмотра рекламной кампании."""
     model = AdCampaign
     template_name = 'ads/ads-detail.html'
     permission_required = 'advertisements.view_adcampaign'
+
+    def get_queryset(self):
+        """
+        Переопределяем queryset для оптимизации.
+        Используем select_related для подгрузки связанной услуги одним запросом,
+        чтобы избежать лишнего запроса к БД при доступе к service в шаблоне.
+        """
+        return super().get_queryset().select_related('service')
 
 
 class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
