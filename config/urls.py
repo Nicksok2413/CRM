@@ -28,4 +28,7 @@ urlpatterns = [
     # Все остальные URL приложения будут обрабатываться в apps.users.urls
     # Подключаем их к корневому пути ''
     path('', include('apps.users.urls')),
+
+    # Маршрут для приложения products ("Услуги")
+    path('products/', include('apps.products.urls')),
 ]
