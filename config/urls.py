@@ -33,6 +33,9 @@ urlpatterns = [
     # Маршрут для приложения advertisements ("Рекламные кампании")
     path('ads/', include('apps.advertisements.urls')),
 
+    # Маршрут для приложения leads ("Лиды")
+    path('leads/', include('apps.leads.urls')),
+
     # Маршрут для приложения products ("Услуги")
     path('products/', include('apps.products.urls')),
 ]
