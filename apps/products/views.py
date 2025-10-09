@@ -4,7 +4,7 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, DetailView, DeleteView, ListView, UpdateView
 
 from .forms import ServiceForm
@@ -31,8 +31,16 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     model = Service
     form_class = ServiceForm
     template_name = 'products/products-create.html'
-    success_url = reverse_lazy('products:list')
     permission_required = 'products.add_service'
+
+    def get_success_url(self) -> str:
+        """
+        Переопределяем метод для перенаправления на детальную страницу
+        объекта после успешного создания.
+
+        :return: URL детальной страницы вида /products/1/
+        """
+        return reverse('products:detail', kwargs={'pk': self.object.pk})
 
 
 class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -40,8 +48,16 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     model = Service
     form_class = ServiceForm
     template_name = 'products/products-edit.html'
-    success_url = reverse_lazy('products:detail')
     permission_required = 'products.change_service'
+
+    def get_success_url(self) -> str:
+        """
+        Переопределяем метод для перенаправления на детальную страницу
+        объекта после успешного редактирования.
+
+        :return: URL детальной страницы вида /products/1/
+        """
+        return reverse('products:detail', kwargs={'pk': self.object.pk})
 
 
 class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
