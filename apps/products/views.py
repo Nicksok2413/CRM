@@ -5,7 +5,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, DetailView, DeleteView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from .forms import ServiceForm
 from .models import Service
@@ -37,8 +37,6 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         """
         Переопределяем метод для перенаправления на детальную страницу
         объекта после успешного создания.
-
-        :return: URL детальной страницы вида /products/1/
         """
         return reverse('products:detail', kwargs={'pk': self.object.pk})
 
@@ -54,8 +52,6 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         """
         Переопределяем метод для перенаправления на детальную страницу
         объекта после успешного редактирования.
-
-        :return: URL детальной страницы вида /products/1/
         """
         return reverse('products:detail', kwargs={'pk': self.object.pk})
 
