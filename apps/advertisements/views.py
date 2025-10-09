@@ -82,7 +82,8 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
 
     def form_valid(self, form) -> HttpResponseRedirect:
         """
-        Переопределяем метод для выполнения "мягкого" удаления.
+        Переопределяем метод form_valid для выполнения "мягкого" удаления.
+        Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
         """
         self.object.soft_delete()
         return HttpResponseRedirect(self.get_success_url())
