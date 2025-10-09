@@ -26,6 +26,10 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+# ======================================================================
+# ...
+# ======================================================================
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "0.0.0.0",
@@ -43,6 +47,8 @@ if DEBUG:
     INTERNAL_IPS.extend(
         [ip[: ip.rfind(".")] + ".1" for ip in ips]
     )
+
+# ======================================================================
 
 # Application definition
 
@@ -76,13 +82,20 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 
+
+# ======================================================================
+# НАСТРОЙКА ДИРЕКТОРИЙ ДЛЯ ШАБЛОНОВ
+# ======================================================================
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Указываем Django искать шаблоны в корневой папке templates
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -91,11 +104,15 @@ TEMPLATES = [
     },
 ]
 
+# ======================================================================
+
 WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Database
+# ======================================================================
+# НАСТРОЙКА БАЗЫ ДАННЫХ (PostgreSQL)
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# ======================================================================
 
 DATABASES = {
     'default': {
@@ -107,6 +124,8 @@ DATABASES = {
         'PORT': config('DB_PORT', cast=int), # `cast=int` преобразует строку из .env в число
     }
 }
+
+# ======================================================================
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -139,15 +158,30 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
+# ======================================================================
+# НАСТРОЙКИ СТАТИЧЕСКИХ ФАЙЛОВ
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
+# ======================================================================
 
+# URL, по которому будут доступны статические файлы в браузере
 STATIC_URL = 'static/'
+
+# Директория, где Django будет искать статические файлы проекта
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Директория, куда `collectstatic` будет собирать все статические файлы для продакшена
+# STATIC_ROOT = BASE_DIR / 'staticfiles' # Пока не используем, но это для будущего
+
+# ======================================================================
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 
 # ======================================================================
 # КАСТОМНЫЕ НАСТРОЙКИ ПРОЕКТА
@@ -155,6 +189,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Указываем Django использовать кастомную модель пользователя
 AUTH_USER_MODEL = 'users.User'
+
+
+# ======================================================================
+# НАСТРОЙКИ АУТЕНТИФИКАЦИИ
+# ======================================================================
+
+# URL для перенаправления неавторизованных пользователей
+LOGIN_URL = '/accounts/login/'
+
+# URL, на который пользователь будет перенаправлен после успешного входа
+LOGIN_REDIRECT_URL = '/'
+
+# URL, на который пользователь будет перенаправлен после выхода
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 
 # ======================================================================
