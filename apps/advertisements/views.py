@@ -22,7 +22,7 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     def get_queryset(self):
         """
         Переопределяем queryset для оптимизации.
-        Используем select_related для подгрузки связанных услуг одним запросом.
+        select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
         """
         return super().get_queryset().select_related('service')
 
@@ -36,8 +36,7 @@ class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     def get_queryset(self):
         """
         Переопределяем queryset для оптимизации.
-        Используем select_related для подгрузки связанной услуги одним запросом,
-        чтобы избежать лишнего запроса к БД при доступе к service в шаблоне.
+        select_related подгружает связанную услугу одним запросом, избегая проблемы "N+1".
         """
         return super().get_queryset().select_related('service')
 
