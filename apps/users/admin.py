@@ -41,6 +41,25 @@ class UserAdmin(BaseUserAdmin):
     # Добавляем ProfileInline в список "встраиваемых" элементов.
     inlines = (ProfileInline,)
 
+    # Копируем fieldsets из BaseUserAdmin и добавляем 'patronymic' в секцию 'Personal info'.
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        ("Personal info", {"fields": ("first_name", "last_name", "patronymic", "email")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
+    )
+
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
