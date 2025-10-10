@@ -30,6 +30,8 @@ class PotentialClient(BaseModel):
     phone = models.CharField(
         max_length=20,
         blank=True,
+        null=True,  # Разрешаем хранить в БД NULL вместо пустой строки
+        unique=True,  # Безопасно добавляем уникальность
         verbose_name="Телефон",
         validators=[validate_international_phone_number],  # Валидатор для телефона
         help_text="Введите номер в любом удобном формате, включая международный."
