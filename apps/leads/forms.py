@@ -8,6 +8,7 @@ from django import forms
 from django.conf import settings
 
 from .models import PotentialClient
+from apps.users.models import User
 
 
 class PotentialClientForm(forms.ModelForm):
@@ -23,24 +24,38 @@ class PotentialClientForm(forms.ModelForm):
     def clean_email(self) -> str:
         """
         Кастомный валидатор для поля email.
-        Проверяет, не существует ли уже клиента с таким email (без учета регистра).
+        Проверяет, не существует ли уже клиента или пользователя с таким email (без учета регистра).
         """
         # Получаем email из данных формы
         email = self.cleaned_data.get('email')
 
-        # Создаем запрос для поиска дубликатов.
+        # 1. Создаем запрос для поиска дубликатов в лидах (включая "удаленных")
         # `iexact` обеспечивает регистронезависимый поиск.
-        query = PotentialClient.objects.filter(email__iexact=email)
+        lead_query = PotentialClient.all_objects.filter(email__iexact=email)
 
-        # Если мы редактируем существующего клиента (self.instance.pk не None),
+        # Если редактируем существующего клиента (self.instance.pk не None),
         # мы должны исключить его самого из проверки.
         if self.instance and self.instance.pk:
-            query = query.exclude(pk=self.instance.pk)
+            lead_query = lead_query.exclude(pk=self.instance.pk)
 
         # Если запрос нашел хотя бы одного другого клиента с таким email
-        if query.exists():
+        if lead_query.exists():
             # Генерируем ошибку валидации, которая будет показана пользователю
-            raise forms.ValidationError("Клиент с таким email уже существует в системе.")
+            raise forms.ValidationError(
+                "Клиент с таким email уже существует в системе (возможно, в архиве лидов)."
+            )
+
+        # 2. Создаем запрос для поиска дубликатов в пользователях (сотрудниках)
+        # Для пользователей нет "мягкого удаления", так что используем .objects
+        user_query = User.objects.filter(email__iexact=email)
+
+        # Если запрос нашел хотя бы одного другого пользователя с таким email
+        if user_query.exists():
+            # Получаем пользователя, чтобы дать более информативное сообщение
+            existing_user = user_query.first()
+            raise forms.ValidationError(
+                f"Этот email уже используется сотрудником: {existing_user.get_full_name()}."
+            )
 
         # Если все в порядке, возвращаем очищенное значение
         return email
@@ -69,7 +84,7 @@ class PotentialClientForm(forms.ModelForm):
             raise forms.ValidationError("Не удалось распознать формат телефонного номера.")
 
         # 2. Проверяем на уникальность, используя нормализованный номер
-        query = PotentialClient.objects.filter(phone=normalized_phone)
+        query = PotentialClient.all_objects.filter(phone=normalized_phone)
 
         # Исключаем самого себя при редактировании
         if self.instance and self.instance.pk:
