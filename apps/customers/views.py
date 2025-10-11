@@ -6,43 +6,114 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from django.views.generic import CreateView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from .forms import ActiveClientForm
+from .forms import ActiveClientCreateForm, ActiveClientUpdateForm
 from .models import ActiveClient
 from apps.leads.models import PotentialClient
 
 
-class ActiveClientCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    """Представление для отображения списка всех активных клиентов."""
+    model = ActiveClient
+    template_name = 'customers/customers-list.html'
+    context_object_name = 'customers'
+    permission_required = 'customers.view_activeclient'
+
+    def get_queryset(self):
+        """
+        Переопределяем queryset для оптимизации.
+        select_related подгружает связанные лиды одним запросом, избегая проблемы "N+1".
+        """
+        return super().get_queryset().select_related('potential_client')
+
+
+class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    """Представление для детального просмотра активного клиента."""
+    model = ActiveClient
+    template_name = 'customers/customers-detail.html'
+    permission_required = 'customers.view_activeclient'
+
+    def get_queryset(self):
+        """
+        Переопределяем queryset для оптимизации на детальной странице.
+        select_related подгружает данные из двух связанных моделей
+        (лида и контракта) одним запросом, избегая проблемы "N+1".
+        """
+        return super().get_queryset().select_related('potential_client', 'contract')
+
+
+class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """
-    Представление для создания Активного клиента из Потенциального.
+    Представление для редактирования записи об активном клиенте.
+    Позволяет привязать клиента к другому контракту.
     """
     model = ActiveClient
-    form_class = ActiveClientForm
+    form_class = ActiveClientUpdateForm  # Используем специальную форму для редактирования
+    template_name = 'customers/customers-edit.html'
+    permission_required = 'customers.change_activeclient'
+
+    def get_success_url(self) -> str:
+        """
+        Переопределяем метод для перенаправления на детальную страницу
+        объекта после успешного редактирования.
+        """
+        messages.success(self.request, 'Данные активного клиента успешно обновлены.')
+        return reverse('customers:detail', kwargs={'pk': self.object.pk})
+
+
+class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    """
+    Представление для "мягкого" удаления записи об активном клиенте.
+    Деактивирует клиента, но не удаляет его данные из системы.
+    """
+    model = ActiveClient
+    template_name = 'customers/customers-delete.html'
+    success_url = reverse_lazy('customers:list')
+    permission_required = 'customers.delete_activeclient'
+
+    def form_valid(self, form) -> HttpResponseRedirect:
+        """
+        Переопределяем метод form_valid для выполнения "мягкого" удаления.
+        Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+        """
+        self.object.soft_delete()
+        messages.success(self.request, f'Активный клиент "{self.object}" был успешно удален.')
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    """
+    Специализированное представление для ключевого бизнес-процесса:
+    "активации" Потенциального клиента.
+    """
+    model = ActiveClient
+    form_class = ActiveClientCreateForm  # Используем специальную форму для создания
     template_name = 'customers/customers-create.html'
     permission_required = 'customers.add_activeclient'
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Переопределяем dispatch для выполнения проверок до отображения формы.
-        """
-        # Получаем лида из URL или возвращаем 404
+        """Переопределяем метод `dispatch` для выполнения проверок до того, как будет показана форма."""
+        # Извлекаем PK лида из URL (например, /customers/new/from-lead/15/)
         lead_pk = self.kwargs.get('lead_pk')
+        # Получаем объект лида или возвращаем ошибку 404, если лид не найден
         self.lead = get_object_or_404(PotentialClient, pk=lead_pk)
 
         # Проверяем, не является ли лид уже активным клиентом.
         # Если да - перенаправляем обратно с сообщением об ошибке.
-        if hasattr(self.lead, 'active_client_status'):
+        # `hasattr` проверяет, есть ли у объекта `lead` атрибут `active_client_status`.
+        # Этот атрибут создается Django автоматически благодаря OneToOneField.
+        if hasattr(self.lead, 'active_client_status') and self.lead.active_client_status is not None:
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
-            return HttpResponseRedirect(reverse('leads:list'))
+            return HttpResponseRedirect(reverse('leads:list'))  # Возвращаемся в список лидов
 
         return super().dispatch(request, *args, **kwargs)
 
     def get_initial(self) -> dict:
         """
         Передаем начальные данные в форму.
-        Это скрытое поле с ID лида.
+        Это скрытое поле с ID лида, которого мы активируем.
         """
         initial = super().get_initial()
         initial['potential_client'] = self.lead
@@ -58,7 +129,7 @@ class ActiveClientCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
 
     def get_success_url(self) -> str:
         """
-        Перенаправляем на детальную страницу лида после активации.
+        Перенаправляем на список активных клиентов после активации.
         """
         messages.success(self.request, f'Клиент "{self.lead}" успешно активирован.')
-        return reverse('leads:detail', kwargs={'pk': self.lead.pk})
+        return reverse('customers:list')
