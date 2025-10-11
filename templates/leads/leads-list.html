@@ -18,7 +18,7 @@
                     <!-- Проверяем, может ли пользователь создавать Активных клиентов -->
                     {% if perms.customers.add_activeclient %}
                         <!-- Проверяем, не является ли этот лид уже активным клиентом -->
-                        {% if not lead.active_client_status %}
+                        {% if not lead.active_client_status or lead.active_client_status.is_deleted %}
                             <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm">Активировать</a>
                         {% else %}
                             <span class="badge bg-success">Активный клиент</span>
