@@ -8,7 +8,7 @@
     </div>
     <div class="col"></div>
     <div class="col">
-        <form method="POST" action="{% url 'customers:create' %}">
+        <form method="POST" action="{% url 'customers:create_from_lead' lead.pk %}">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary">Создать</button>
