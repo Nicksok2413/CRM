@@ -7,10 +7,9 @@ from django.db.models import Q
 
 from .models import ActiveClient
 from apps.contracts.models import Contract
-from apps.leads.models import PotentialClient
 
 
-class ActiveClientForm(forms.ModelForm):
+class ActiveClientCreateForm(forms.ModelForm):
     """
     Форма для создания Активного клиента из Лида.
     """
