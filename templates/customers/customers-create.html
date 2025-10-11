@@ -4,11 +4,11 @@
 <h2 class="fw-bold">Создание активного клиента</h2>
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
     <div class="hstack gap-3 pb-4">
-        <a href="{% url 'leads:list' %}" class="btn btn-success p-2">К списку лидов</a>
+        <a href="{% url 'customers:list' %}" class="btn btn-success p-2">К списку активных клиентов</a>
     </div>
     <div class="col"></div>
     <div class="col">
-        <form method="POST" action="/customers/new/">
+        <form method="POST" action="{% url 'customers:create' %}">
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary">Создать</button>
