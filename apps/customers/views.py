@@ -102,15 +102,7 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
         # Проверяем, не является ли лид уже активным клиентом.
         # Если да - перенаправляем обратно с сообщением об ошибке.
-        # `hasattr` проверяет, есть ли у объекта `lead` атрибут `active_client_status`.
-        # Этот атрибут создается Django автоматически благодаря OneToOneField.
-        is_active = (
-                hasattr(self.lead, 'active_client_status') and
-                self.lead.active_client_status is not None and
-                not self.lead.active_client_status.is_deleted
-        )
-
-        if is_active:
+        if self.lead.get_current_status():
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
             return HttpResponseRedirect(reverse('leads:list'))  # Возвращаемся в список лидов
 
