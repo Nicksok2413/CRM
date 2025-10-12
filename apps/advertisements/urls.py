@@ -5,6 +5,7 @@ from .views import (
     AdCampaignDeleteView,
     AdCampaignDetailView,
     AdCampaignListView,
+    AdCampaignStatisticView,
     AdCampaignUpdateView,
 )
 
@@ -19,4 +20,6 @@ urlpatterns = [
     path('<int:pk>/delete/', AdCampaignDeleteView.as_view(), name='delete'),
     path('<int:pk>/edit/', AdCampaignUpdateView.as_view(), name='edit'),
 
+    # URL для статистики
+    path('statistic/', AdCampaignStatisticView.as_view(), name='statistic'),
 ]

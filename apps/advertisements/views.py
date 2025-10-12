@@ -3,6 +3,8 @@
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Case, Count, DecimalField, F, Q, QuerySet, Sum, When
+from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -87,6 +89,55 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         self.object.soft_delete()
         return HttpResponseRedirect(self.get_success_url())
 
-# Примечание: Представление для страницы статистики (ads-statistic.html)
-# создам позже, так как оно требует более сложной логики с аннотациями.
-# Пока фокусируюсь на стандартном CRUD.
+
+class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    """
+    Представление для отображения статистики по рекламным кампаниям.
+    """
+    model = AdCampaign
+    template_name = 'ads/ads-statistic.html'
+    context_object_name = 'ads'
+    # Согласно ТЗ, все роли могут смотреть статистику
+    permission_required = 'advertisements.view_adcampaign'
+
+    def get_queryset(self) -> QuerySet[AdCampaign]:
+        """
+        Переопределяем queryset для добавления вычисляемых полей (аннотаций).
+        """
+        # 1. Сначала получаем базовый queryset
+        queryset = super().get_queryset()
+
+        # 2. Добавляем аннотации
+        annotated_queryset = queryset.annotate(
+            # Количество уникальных лидов для каждой кампании
+            leads_count=Count('leads', distinct=True),
+
+            # Количество активных клиентов.
+            # Мы считаем только те записи `ActiveClient`, которые не были "мягко" удалены.
+            customers_count=Count(
+                'leads__contracts_history',
+                filter=Q(leads__contracts_history__is_deleted=False),
+                distinct=True
+            ),
+
+            # Суммарный доход от контрактов активных клиентов.
+            # Coalesce(..., 0) заменяет NULL на 0, если у кампании нет дохода.
+            total_revenue=Coalesce(
+                Sum(
+                    'leads__contracts_history__contract__amount',
+                    filter=Q(leads__contracts_history__is_deleted=False)
+                ),
+                0,
+                output_field=DecimalField()
+            ),
+
+            # Рассчитываем соотношение дохода к бюджету.
+            # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
+            profit_ratio=Case(
+                When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
+                default=(F('total_revenue') / F('budget')),
+                output_field=DecimalField(decimal_places=2)
+            )
+        )
+
+        return annotated_queryset
