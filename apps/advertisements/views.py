@@ -3,7 +3,7 @@
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, F, Q, QuerySet, Sum, When
+from django.db.models import Case, Count, DecimalField,  ExpressionWrapper, F, Q, QuerySet, Sum, When
 from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
@@ -131,12 +131,23 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
                 output_field=DecimalField()
             ),
 
-            # Рассчитываем соотношение дохода к бюджету.
-            # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
+            # # Рассчитываем соотношение дохода к бюджету.
+            # # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
+            # profit_ratio=Case(
+            #     When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
+            #     default=(F('total_revenue') / F('budget')),
+            #     output_field=DecimalField(decimal_places=2)
+            # )
+
+            # Используем ExpressionWrapper, чтобы явно указать Django,
+            # что результат деления должен быть DecimalField.
+            # Это решает проблемы с типами данных на уровне базы данных.
             profit_ratio=Case(
-                When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
-                default=(F('total_revenue') / F('budget')),
-                output_field=DecimalField(decimal_places=2)
+                When(budget=0, then=None),  # По-прежнему избегаем деления на ноль
+                default=ExpressionWrapper(
+                    (F('total_revenue') / F('budget')) * 100,  # Умножаем на 100, чтобы получить проценты
+                    output_field=DecimalField(max_digits=10, decimal_places=2)
+                )
             )
         )
 
