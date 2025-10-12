@@ -6,8 +6,8 @@
 import random
 from typing import Any
 
-import factory
-from faker import Faker
+import factory  # noqa
+from faker import Faker  # noqa
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -161,5 +161,22 @@ class Command(BaseCommand):
         for lead in leads[:num_active_clients]:
             # Создаем активного клиента, фабрика сама создаст связанный контракт
             ActiveClientFactory(potential_client=lead)
+
+        # 5. Создаем архивные контракты для некоторых из уже активных клиентов
+
+        self.stdout.write('Создаем архивные (старые) контракты...')
+
+        # Список активных клиентов
+        active_leads_with_history = leads[:num_active_clients]
+
+        # Перемешиваем список активных клиентов
+        random.shuffle(active_leads_with_history)
+
+        # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту
+        for lead in active_leads_with_history[:len(active_leads_with_history) // 5]:
+            # Создаем еще одну запись ActiveClient
+            old_active_client_record = ActiveClientFactory(potential_client=lead)
+            # И сразу же "мягко" ее удаляем, чтобы она стала архивной
+            old_active_client_record.soft_delete()  # noqa
 
         self.stdout.write(self.style.SUCCESS('База данных успешно наполнена!'))
