@@ -14,7 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
@@ -45,3 +46,14 @@ urlpatterns = [
     # Маршрут для приложения products ("Услуги")
     path('products/', include('apps.products.urls')),
 ]
+
+# ======================================================================
+# НАСТРОЙКА ДЛЯ РАЗДАЧИ МЕДИАФАЙЛОВ В РЕЖИМЕ РАЗРАБОТКИ
+# ======================================================================
+
+# Это специальная конструкция, которая добавляет маршрут для медиафайлов,
+# только если проект запущен в режиме отладки (DEBUG = True).
+# В продакшене (DEBUG = False) эта строка не будет выполняться,
+# так как раздачей файлов должен заниматься веб-сервер (Nginx).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
