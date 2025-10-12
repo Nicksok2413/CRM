@@ -9,8 +9,13 @@
             {% for customer in customers %}
             <li class="list-group-item list-group-item-light d-flex justify-content-between">
                 <a href="{% url 'customers:detail' customer.pk %}" class="text-decoration-none link-dark">{{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}</a>
-                <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger">Удалить</a>
+
+                {% if perms.customers.delete_activeclient %}
+                    <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger">Удалить</a>
+                {% endif %}
             </li>
+            {% empty %}
+                <li class="list-group-item">Пока нет ни одного активного клиента.</li>
             {% endfor %}
         </ul>
     </div>
