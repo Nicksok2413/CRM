@@ -54,3 +54,20 @@ body {
     background: #eee;
     text-decoration: none;
 }
+
+/* Стили для блока профиля в сайдбаре */
+.user-profile {
+    color: #343a40; /* Темно-серый цвет текста */
+}
+
+.user-avatar {
+    width: 150px;
+    height: 150px;
+    object-fit: cover; /* Сохраняет пропорции фото, обрезая лишнее */
+}
+
+.user-avatar-default {
+    font-size: 150px;   /* Делает иконку-заглушку большой */
+    line-height: 1;
+    color: #6c757d;    /* Приглушенный серый цвет для иконки */
+}

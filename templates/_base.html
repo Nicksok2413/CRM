@@ -26,6 +26,27 @@
                 </span>
             </h1>
         </div>
+
+        <!-- ======================== БЛОК ПРОФИЛЯ ======================== -->
+        {% if user.is_authenticated %}
+        <div class="user-profile d-flex flex-column align-items-center p-3">
+
+            <!-- Аватар или иконка по умолчанию -->
+            {% if user.profile.photo %}
+                <img src="{{ user.profile.photo.url }}" alt="Avatar" class="user-avatar rounded-circle mb-2">
+            {% else %}
+                <!-- Если фото нет, показываем иконку Font Awesome -->
+                <span class="user-avatar-default mb-2"><i class="fas fa-user-circle"></i></span>
+            {% endif %}
+
+            <!-- Имя пользователя -->
+            <span class="user-name fw-bold mt-2">{% firstof user.get_full_name user.username %}</span>
+
+        </div>
+        <hr class="mx-2 my-0"> <!-- Разделительная линия -->
+        {% endif %}
+        <!-- ==================================================================== -->
+
         <ul class="list-unstyled px-2">
             {% if perms.products.view_service %}
             <li><a href="/products/" class="bar-item text-decoration-none px-3 py-3 d-block">
