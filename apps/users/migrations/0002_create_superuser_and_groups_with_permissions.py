@@ -91,8 +91,8 @@ def ensure_permissions_exist(apps, schema_editor):
        ('add', 'change', 'delete', 'view').
     """
     # Получаем моделей, с которыми мы будем работать
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Permission = apps.get_model('auth', 'Permission')
+    ContentType = apps.get_model('contenttypes', 'ContentType')  # noqa
+    Permission = apps.get_model('auth', 'Permission')  # noqa
 
     # 1. Собираем информацию о всех моделях, упомянутых в ролях
     # Проходим по всей структуре `ROLES_PERMISSIONS` и собираем
@@ -160,11 +160,11 @@ def create_superuser_and_roles(apps, schema_editor):
     # 1. Получаем все необходимые модели.
     # Используем apps.get_model() для получения исторических версий моделей,
     # соответствующих моменту применения этой миграции.
-    User = apps.get_model('users', 'User')
-    Profile = apps.get_model('users', 'Profile')
-    Group = apps.get_model('auth', 'Group')
-    Permission = apps.get_model('auth', 'Permission')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    User = apps.get_model('users', 'User')  # noqa
+    Profile = apps.get_model('users', 'Profile')  # noqa
+    Group = apps.get_model('auth', 'Group')  # noqa
+    Permission = apps.get_model('auth', 'Permission')  # noqa
+    ContentType = apps.get_model('contenttypes', 'ContentType')  # noqa
 
     # 2. Создаем суперпользователя
     # Используем decouple.config() для чтения из .env
@@ -231,7 +231,7 @@ def create_superuser_and_roles(apps, schema_editor):
 
                 except ContentType.DoesNotExist:
                     print(
-                        f"    - ОШИБКА: Модель '{app_label}.{model_name}' не найдена для права '{perm_codename}'."
+                        f"    - ОШИБКА: Модель '{app_label}.{model_name}' не найдена для права '{perm_codename}'."  # noqa
                     )
                 except Permission.DoesNotExist:
                     print(f"    - ОШИБКА: Право '{perm_codename}' не найдено в базе данных.")
@@ -251,8 +251,8 @@ def revert_migration(apps, schema_editor):
     """
     Откат миграции: удаляет созданные данные.
     """
-    User = apps.get_model('users', 'User')
-    Group = apps.get_model('auth', 'Group')
+    User = apps.get_model('users', 'User')  # noqa
+    Group = apps.get_model('auth', 'Group')  # noqa
 
     # Удаление суперпользователя каскадно удалит и связанный с ним профиль
     admin_username = config('ADMIN_USERNAME', default='admin')
