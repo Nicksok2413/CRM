@@ -4,12 +4,19 @@
 
 import phonenumbers
 
+from typing import TYPE_CHECKING, Optional
+
 from django.conf import settings
 from django.db import models
 
 from apps.advertisements.models import AdCampaign
 from apps.common.models import BaseModel
 from apps.common.validators import validate_international_phone_number, validate_letters_and_hyphens
+
+# Этот блок импортируется только во время статической проверки типов.
+# Он предотвращает ошибки циклического импорта во время выполнения.
+if TYPE_CHECKING:
+    from apps.customers.models import ActiveClient
 
 
 class PotentialClient(BaseModel):
@@ -45,6 +52,18 @@ class PotentialClient(BaseModel):
         related_name='leads',
         verbose_name="Рекламная кампания"
     )
+
+    # Явная аннотация для обратной связи.
+    # PyCharm и mypy теперь знают, что у `PotentialClient` есть
+    # менеджер `contracts_history`, который возвращает QuerySet объектов `ActiveClient`.
+    contracts_history: models.Manager["ActiveClient"]
+
+    def get_current_status(self):
+        """
+        Возвращает текущую запись об активности клиента.
+        Ищет в истории контрактов запись, которая не помечена как удаленная.
+        """
+        return self.contracts_history.filter(is_deleted=False).first()
 
     def save(self, *args, **kwargs):
         """
