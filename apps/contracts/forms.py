@@ -1,7 +1,7 @@
 """
 Формы для приложения contracts.
 """
-
+from typing import Any
 from django import forms
 
 from .models import Contract
@@ -22,12 +22,20 @@ class ContractForm(forms.ModelForm):
             "end_date": forms.DateInput(attrs={"placeholder": "Выберите дату...", "class": "datepicker"}),
         }
 
-    def clean(self):
+    def clean(self) -> dict[str, Any]:
         """
         Переопределяем метод clean для добавления кастомной логики валидации,
         которая затрагивает несколько полей.
         """
         cleaned_data = super().clean()
+
+        # Если родительский метод clean не вернул словарь (например, из-за ошибки
+        # в одном из полей), мы прекращаем нашу собственную валидацию.
+        if cleaned_data is None:
+            # Возвращаем пустой словарь, так как метод должен вернуть dict.
+            # Ошибки уже будут записаны в form.errors.
+            return {}
+
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
 
