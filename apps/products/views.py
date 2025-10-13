@@ -3,6 +3,7 @@
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -32,6 +33,7 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     """Представление для создания новой услуги."""
 
     model = Service
+    object: Service  # Явная аннотация для mypy
     form_class = ServiceForm
     template_name = "products/products-create.html"
     permission_required = "products.add_service"
@@ -48,6 +50,7 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     """Представление для редактирования услуги."""
 
     model = Service
+    object: Service  # Явная аннотация для mypy
     form_class = ServiceForm
     template_name = "products/products-edit.html"
     permission_required = "products.change_service"
@@ -70,7 +73,7 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     success_url = reverse_lazy("products:list")
     permission_required = "products.delete_service"
 
-    def form_valid(self, form) -> HttpResponseRedirect:
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().

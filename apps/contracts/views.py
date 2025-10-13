@@ -3,6 +3,8 @@
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import QuerySet
+from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -19,7 +21,7 @@ class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     context_object_name = "contracts"
     permission_required = "contracts.view_contract"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Contract]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
@@ -34,7 +36,7 @@ class ContractDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView
     template_name = "contracts/contracts-detail.html"
     permission_required = "contracts.view_contract"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Contract]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанную услугу одним запросом, избегая проблемы "N+1".
@@ -46,6 +48,7 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     """Представление для создания нового контракта."""
 
     model = Contract
+    object: Contract  # Явная аннотация для mypy
     form_class = ContractForm
     template_name = "contracts/contracts-create.html"
     permission_required = "contracts.add_contract"
@@ -62,6 +65,7 @@ class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
     """Представление для редактирования контракта."""
 
     model = Contract
+    object: Contract  # Явная аннотация для mypy
     form_class = ContractForm
     template_name = "contracts/contracts-edit.html"
     permission_required = "contracts.change_contract"
@@ -82,7 +86,7 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     success_url = reverse_lazy("contracts:list")
     permission_required = "contracts.delete_contract"
 
-    def form_valid(self, form) -> HttpResponseRedirect:
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().

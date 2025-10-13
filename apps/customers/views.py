@@ -1,10 +1,13 @@
 """
 Представления (Views) для приложения customers.
 """
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.http import HttpResponseRedirect
+from django.db.models import QuerySet
+from django.forms.models import BaseModelForm
+from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -23,7 +26,7 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
     context_object_name = "customers"
     permission_required = "customers.view_activeclient"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[ActiveClient]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные лиды одним запросом, избегая проблемы "N+1".
@@ -38,7 +41,7 @@ class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, Detail
     template_name = "customers/customers-detail.html"
     permission_required = "customers.view_activeclient"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[ActiveClient]:
         """
         Переопределяем queryset для оптимизации на детальной странице.
         select_related подгружает данные из двух связанных моделей
@@ -54,6 +57,7 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     """
 
     model = ActiveClient
+    object: ActiveClient  # Явная аннотация для mypy
     form_class = ActiveClientUpdateForm  # Используем специальную форму для редактирования
     template_name = "customers/customers-edit.html"
     permission_required = "customers.change_activeclient"
@@ -78,7 +82,7 @@ class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Delete
     success_url = reverse_lazy("customers:list")
     permission_required = "customers.delete_activeclient"
 
-    def form_valid(self, form) -> HttpResponseRedirect:
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
@@ -99,7 +103,10 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
     template_name = "customers/customers-create.html"
     permission_required = "customers.add_activeclient"
 
-    def dispatch(self, request, *args, **kwargs):
+    # Явно аннотируем self.lead для mypy, так как он создается в dispatch
+    lead: PotentialClient
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         """Переопределяем метод `dispatch` для выполнения проверок до того, как будет показана форма."""
         # Извлекаем PK лида из URL (например, /customers/new/from-lead/15/)
         lead_pk = self.kwargs.get("lead_pk")
@@ -114,7 +121,7 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_initial(self) -> dict:
+    def get_initial(self) -> dict[str, Any]:
         """
         Передаем начальные данные в форму.
         Это скрытое поле с ID лида, которого мы активируем.
@@ -123,7 +130,7 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         initial["potential_client"] = self.lead
         return initial
 
-    def get_context_data(self, **kwargs) -> dict:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
         Добавляем в контекст шаблона объект лида для отображения информации о нем.
         """

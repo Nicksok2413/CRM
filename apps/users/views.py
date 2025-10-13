@@ -22,7 +22,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
     template_name = "users/index.html"
 
-    def get_context_data(self, **kwargs: Any) -> dict[Any, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
         Переопределяем метод для добавления кастомного контекста в шаблон.
         """

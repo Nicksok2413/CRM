@@ -2,9 +2,12 @@
 Представления (Views) для приложения advertisements.
 """
 
+from typing import Any
+
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Q, QuerySet, Sum, When
 from django.db.models.functions import Coalesce
+from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -22,7 +25,7 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     context_object_name = "ads"
     permission_required = "advertisements.view_adcampaign"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[AdCampaign]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
@@ -37,7 +40,7 @@ class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
     template_name = "ads/ads-detail.html"
     permission_required = "advertisements.view_adcampaign"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[AdCampaign]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанную услугу одним запросом, избегая проблемы "N+1".
@@ -49,6 +52,7 @@ class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVi
     """Представление для создания новой рекламной кампании."""
 
     model = AdCampaign
+    object: AdCampaign  # Явная аннотация для mypy
     form_class = AdCampaignForm
     template_name = "ads/ads-create.html"
     permission_required = "advertisements.add_adcampaign"
@@ -65,6 +69,7 @@ class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVi
     """Представление для редактирования рекламной кампании."""
 
     model = AdCampaign
+    object: AdCampaign  # Явная аннотация для mypy
     form_class = AdCampaignForm
     template_name = "ads/ads-edit.html"
     permission_required = "advertisements.change_adcampaign"
@@ -85,7 +90,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
     success_url = reverse_lazy("ads:list")
     permission_required = "advertisements.delete_adcampaign"
 
-    def form_valid(self, form) -> HttpResponseRedirect:
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
@@ -105,7 +110,7 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
     # Согласно ТЗ, все роли могут смотреть статистику
     permission_required = "advertisements.view_adcampaign"
 
-    def get_queryset(self) -> QuerySet[AdCampaign]:
+    def get_queryset(self) -> Any:
         """
         Переопределяем queryset для добавления вычисляемых полей (аннотаций).
         """

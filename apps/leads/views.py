@@ -3,6 +3,8 @@
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import QuerySet
+from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
@@ -20,7 +22,7 @@ class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     # Право на просмотр будет и у Оператора, и у Менеджера
     permission_required = "leads.view_potentialclient"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[PotentialClient]:
         """
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
@@ -36,7 +38,7 @@ class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     template_name = "leads/leads-detail.html"
     permission_required = "leads.view_potentialclient"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[PotentialClient]:
         """
         Переопределяем queryset для оптимизации на детальной странице.
 
@@ -55,6 +57,7 @@ class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     """Представление для создания нового лида."""
 
     model = PotentialClient
+    object: PotentialClient  # Явная аннотация для mypy
     form_class = PotentialClientForm
     template_name = "leads/leads-create.html"
     # Право на добавление будет только у Оператора
@@ -72,6 +75,7 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования лида."""
 
     model = PotentialClient
+    object: PotentialClient  # Явная аннотация для mypy
     form_class = PotentialClientForm
     template_name = "leads/leads-edit.html"
     # Право на изменение будет только у Оператора
@@ -94,7 +98,7 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     # Право на удаление будет только у Оператора
     permission_required = "leads.delete_potentialclient"
 
-    def form_valid(self, form) -> HttpResponseRedirect:
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
