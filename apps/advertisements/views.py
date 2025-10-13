@@ -131,19 +131,13 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
                 output_field=DecimalField()
             ),
 
-            # # Рассчитываем соотношение дохода к бюджету.
-            # # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
-            # profit_ratio=Case(
-            #     When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
-            #     default=(F('total_revenue') / F('budget')),
-            #     output_field=DecimalField(decimal_places=2)
-            # )
-
+            # Рассчитываем соотношение дохода к бюджету.
+            # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
             # Используем ExpressionWrapper, чтобы явно указать Django,
             # что результат деления должен быть DecimalField.
             # Это решает проблемы с типами данных на уровне базы данных.
-            profit_ratio=Case(
-                When(budget=0, then=None),  # По-прежнему избегаем деления на ноль
+            profit=Case(
+                When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
                 default=ExpressionWrapper(
                     (F('total_revenue') / F('budget')) * 100,  # Умножаем на 100, чтобы получить проценты
                     output_field=DecimalField(max_digits=10, decimal_places=2)
