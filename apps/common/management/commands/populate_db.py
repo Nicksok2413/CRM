@@ -5,6 +5,7 @@
 
 import random
 from typing import Any
+from argparse import ArgumentParser
 
 import factory  # noqa
 from django.core.management.base import BaseCommand
@@ -96,7 +97,7 @@ class Command(BaseCommand):
 
     help = "Наполняет базу данных тестовыми данными"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: ArgumentParser) -> None:
         """
         Добавляем аргумент командной строки для указания количества
         создаваемых записей.
@@ -127,7 +128,7 @@ class Command(BaseCommand):
         for _ in range(count * 3):  # Создадим в 3 раза больше лидов
             # Случайно выбираем одну из уже созданных кампаний
             campaign = random.choice(campaigns)
-            leads.append(PotentialClientFactory(ad_campaign=campaign))
+            leads.append(PotentialClientFactory.create(ad_campaign=campaign))
 
         # 3. Создадим некоторое количество "свободных" контрактов
 
@@ -141,7 +142,7 @@ class Command(BaseCommand):
         for _ in range(count):
             # Создаем контракт для случайной услуги
             service = random.choice(all_services)
-            free_contracts.append(ContractFactory(service=service))
+            free_contracts.append(ContractFactory.create(service=service))
 
         # 4. "Активируем" часть клиентов
 
@@ -155,7 +156,7 @@ class Command(BaseCommand):
 
         for lead in leads[:num_active_clients]:
             # Создаем активного клиента, фабрика сама создаст связанный контракт
-            ActiveClientFactory(potential_client=lead)
+            ActiveClientFactory.create(potential_client=lead)
 
         # 5. Создаем архивные контракты для некоторых из уже активных клиентов
 
@@ -170,8 +171,8 @@ class Command(BaseCommand):
         # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту
         for lead in active_leads_with_history[: len(active_leads_with_history) // 5]:
             # Создаем еще одну запись ActiveClient
-            old_active_client_record = ActiveClientFactory(potential_client=lead)
+            old_active_client_record = ActiveClientFactory.create(potential_client=lead)
             # И сразу же "мягко" ее удаляем, чтобы она стала архивной
-            old_active_client_record.soft_delete()  # noqa
+            old_active_client_record.soft_delete()
 
         self.stdout.write(self.style.SUCCESS("База данных успешно наполнена!"))
