@@ -4,8 +4,8 @@
 """
 
 import random
-from typing import Any
 from argparse import ArgumentParser
+from typing import Any
 
 import factory  # noqa
 from django.core.management.base import BaseCommand

@@ -2,7 +2,7 @@
 Модели для приложения leads (потенциальные клиенты).
 """
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import phonenumbers
 from django.conf import settings

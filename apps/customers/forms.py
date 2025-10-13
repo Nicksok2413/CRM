@@ -1,7 +1,9 @@
 """
 Формы для приложения customers.
 """
+
 from typing import Any
+
 from django import forms
 from django.db.models import Q
 
@@ -32,7 +34,6 @@ class ActiveClientCreateForm(forms.ModelForm):
             # Показываем только те контракты, которые еще не связаны
             # ни с одним активным клиентом (`active_client__isnull=True`).
             contract_field.queryset = Contract.objects.filter(active_client__isnull=True)
-
 
     class Meta:
         model = ActiveClient

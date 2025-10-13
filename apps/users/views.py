@@ -1,7 +1,9 @@
 """
 Представления (Views) для приложения users.
 """
+
 from typing import Any
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 

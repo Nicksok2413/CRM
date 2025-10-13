@@ -2,8 +2,9 @@
 Кастомные валидаторы для всего проекта.
 """
 
-import phonenumbers
 from typing import Any
+
+import phonenumbers
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files import File

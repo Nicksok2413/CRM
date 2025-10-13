@@ -1,7 +1,9 @@
 """
 Формы для приложения contracts.
 """
+
 from typing import Any
+
 from django import forms
 
 from .models import Contract

@@ -1,6 +1,7 @@
 """
 Представления (Views) для приложения customers.
 """
+
 from typing import Any
 
 from django.contrib import messages
