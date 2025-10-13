@@ -27,7 +27,7 @@ class PotentialClientForm(forms.ModelForm):
         Проверяет, не существует ли уже клиента или пользователя с таким email (без учета регистра).
         """
         # Получаем email из данных формы
-        email = self.cleaned_data.get("email")
+        email: str = self.cleaned_data["email"]
 
         # 1. Создаем запрос для поиска дубликатов в лидах (включая "удаленных")
         # `iexact` обеспечивает регистронезависимый поиск.
@@ -51,12 +51,17 @@ class PotentialClientForm(forms.ModelForm):
         if user_query.exists():
             # Получаем пользователя, чтобы дать более информативное сообщение
             existing_user = user_query.first()
+
+            # Добавляем эту строку. Она ничего не делает во время выполнения,
+            # но для mypy это доказательство, что existing_user не None.
+            assert existing_user is not None
+
             raise forms.ValidationError(f"Этот email уже используется сотрудником: {existing_user.get_full_name()}.")
 
         # Если все в порядке, возвращаем очищенное значение
         return email
 
-    def clean_phone(self) -> str:
+    def clean_phone(self) -> str | None:
         """
         Кастомный валидатор для поля phone.
         Нормализует номер и проверяет его на уникальность.

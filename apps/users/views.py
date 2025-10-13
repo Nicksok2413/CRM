@@ -1,7 +1,7 @@
 """
 Представления (Views) для приложения users.
 """
-
+from typing import Any
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
@@ -22,7 +22,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
     template_name = "users/index.html"
 
-    def get_context_data(self, **kwargs) -> dict:
+    def get_context_data(self, **kwargs: Any) -> dict[Any, Any]:
         """
         Переопределяем метод для добавления кастомного контекста в шаблон.
         """

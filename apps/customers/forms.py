@@ -1,7 +1,7 @@
 """
 Формы для приложения customers.
 """
-
+from typing import Any
 from django import forms
 from django.db.models import Q
 
@@ -15,16 +15,24 @@ class ActiveClientCreateForm(forms.ModelForm):
     Форма для создания Активного клиента из Лида.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Переопределяем конструктор для кастомизации поля 'contract'.
         """
         super().__init__(*args, **kwargs)
 
-        # Фильтруем queryset для поля 'contract'.
-        # Показываем только те контракты, которые еще не связаны
-        # ни с одним активным клиентом (`active_client__isnull=True`).
-        self.fields["contract"].queryset = Contract.objects.filter(active_client__isnull=True)
+        # Получаем поле, с которым будем работать
+        contract_field = self.fields["contract"]
+
+        # Проверяем, что это поле выбора модели (для безопасности и подсказки mypy)
+        if isinstance(contract_field, forms.ModelChoiceField):
+            # Теперь mypy знает, что у contract_field есть атрибут queryset
+
+            # Фильтруем queryset.
+            # Показываем только те контракты, которые еще не связаны
+            # ни с одним активным клиентом (`active_client__isnull=True`).
+            contract_field.queryset = Contract.objects.filter(active_client__isnull=True)
+
 
     class Meta:
         model = ActiveClient
@@ -44,7 +52,7 @@ class ActiveClientUpdateForm(forms.ModelForm):
     Основной сценарий использования: смена контракта для существующего активного клиента.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Переопределяем конструктор для кастомизации поля 'contract'.
         """
@@ -54,15 +62,19 @@ class ActiveClientUpdateForm(forms.ModelForm):
         # Django передает в форму при ее инициализации в UpdateView.
         instance = kwargs.get("instance")
 
+        # Получаем поле, с которым будем работать
+        contract_field = self.fields["contract"]
+
         # Убеждаемся, что мы работаем с существующим объектом (а не создаем новый).
-        if instance and instance.pk:
-            # Модифицируем queryset для поля 'contract'.
+        # Проверяем, что у нас есть instance и что поле - нужного типа.
+        if instance and instance.pk and isinstance(contract_field, forms.ModelChoiceField):
+            # Модифицируем queryset.
             # Нам нужно, чтобы в выпадающем списке были:
             # 1. Все "свободные" контракты (active_client__isnull=True).
             # 2. Текущий контракт, который уже присвоен этому клиенту (pk=instance.contract.pk).
             #    Это необходимо, чтобы текущее значение отображалось в форме корректно.
             # `Q` используем для создания сложного SQL-запроса с логикой "ИЛИ" (`|`).
-            self.fields["contract"].queryset = Contract.objects.filter(
+            contract_field.queryset = Contract.objects.filter(
                 Q(active_client__isnull=True) | Q(pk=instance.contract.pk)
             )
 
