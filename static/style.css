@@ -1,0 +1,73 @@
+* {
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: #dfe9f5;
+}
+
+.nav-logo {
+    text-align: center;
+}
+
+.nav-logo span {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#side_nav {
+    background: #fff;
+    min-width: 250px;
+    max-width: 250px;
+}
+
+.bar-item {
+    color: rgb(85, 83, 83);
+}
+
+.bar-item:hover {
+    color: #000;
+    background: #eee;
+}
+
+.content {
+    background: #dfe9f5;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.card-body i {
+    float: left;
+    font-size: 9rem;
+}
+
+/* Стили для кнопки выхода, чтобы она выглядела как ссылка в меню */
+.bar-item.btn-link {
+    color: rgb(85, 83, 83);
+    text-align: left;
+    border: none;
+    border-radius: 0;
+}
+
+.bar-item.btn-link:hover {
+    color: #000;
+    background: #eee;
+    text-decoration: none;
+}
+
+/* Стили для блока профиля в сайдбаре */
+.user-profile {
+    color: #343a40; /* Темно-серый цвет текста */
+}
+
+.user-avatar {
+    width: 150px;
+    height: 150px;
+    object-fit: cover; /* Сохраняет пропорции фото, обрезая лишнее */
+}
+
+.user-avatar-default {
+    font-size: 150px;   /* Делает иконку-заглушку большой */
+    line-height: 1;
+    color: #6c757d;    /* Приглушенный серый цвет для иконки */
+}

@@ -13,7 +13,7 @@ def create_dynamic_upload_path(instance: "Model", filename: str) -> str:
     Создает унифицированный, динамический путь для сохранения файлов.
 
     Файлы будут сохраняться по пути:
-    MEDIA_ROOT/<app_label>/<model_name>s/<instance_id>/<filename>
+    MEDIA_ROOT/<app_label>/<model_name>_<instance_id>/<filename>
 
     Args:
         instance: Экземпляр модели (Profile, Contract, и т.д.).
@@ -26,4 +26,4 @@ def create_dynamic_upload_path(instance: "Model", filename: str) -> str:
     model_name = instance.__class__.__name__.lower()
     instance_id = instance.pk
 
-    return f"{app_label}/{model_name}s/{instance_id}/{filename}"
+    return f"{app_label}/{model_name}_{instance_id}/{filename}"

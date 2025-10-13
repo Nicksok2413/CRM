@@ -14,9 +14,46 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
+    # Админ-панель
     path('admin/', admin.site.urls),
+
+    # Встроенные URL для аутентификации (login, logout, password_reset, и т.д.)
+    # Они будут доступны по адресам '/accounts/login/', '/accounts/logout/' и т.д.
+    path('accounts/', include('django.contrib.auth.urls')),
+
+    # Все остальные URL приложения будут обрабатываться в apps.users.urls
+    # Подключаем их к корневому пути ''
+    path('', include('apps.users.urls')),
+
+    # Маршрут для приложения advertisements ("Рекламные кампании")
+    path('ads/', include('apps.advertisements.urls')),
+
+    # Маршрут для приложения contracts ("Контракты")
+    path('contracts/', include('apps.contracts.urls')),
+
+    # Маршрут для приложения customers ("Активные клиенты")
+    path('customers/', include('apps.customers.urls')),
+
+    # Маршрут для приложения leads ("Лиды")
+    path('leads/', include('apps.leads.urls')),
+
+    # Маршрут для приложения products ("Услуги")
+    path('products/', include('apps.products.urls')),
 ]
+
+# ======================================================================
+# НАСТРОЙКА ДЛЯ РАЗДАЧИ МЕДИАФАЙЛОВ В РЕЖИМЕ РАЗРАБОТКИ
+# ======================================================================
+
+# Это специальная конструкция, которая добавляет маршрут для медиафайлов,
+# только если проект запущен в режиме отладки (DEBUG = True).
+# В продакшене (DEBUG = False) эта строка не будет выполняться,
+# так как раздачей файлов должен заниматься веб-сервер (Nginx).
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
