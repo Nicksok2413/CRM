@@ -3,12 +3,30 @@
 {% block content %}
 <h2 class="fw-bold">Статистика рекламных компаний</h2>
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
+    <div class="hstack gap-3 pb-4">
+        <a href="{% url 'ads:list' %}" class="btn btn-success p-2">К списку рекламных компаний</a>
+    </div>
     <div class="col">
         <ul class="list-group">
             {% for ad in ads %}
             <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'ads:detail' ad.pk %}" class="text-decoration-none link-dark">{{ ad.name }}</a>
-                <p>Лидов: {{ ad.leads_count }} | Активных клиентов: {{ ad.customers_count }} | Соотношение контрактов к затратам: {{ ad.profit|default_if_none:"-" }}</p>
+
+                <!-- Проверяем, есть ли у текущего пользователя право на просмотр детальной информации -->
+                {% if perms.advertisements.view_adcampaign %}
+                    <!-- Если право есть, показываем кликабельную ссылку -->
+                    <a href="{% url 'ads:detail' ad.pk %}" class="text-decoration-none link-dark">
+                        {{ ad.name }}
+                    </a>
+                {% else %}
+                    <!-- Если права нет, показываем просто текст (название кампании) -->
+                    <span>{{ ad.name }}</span>
+                {% endif %}
+
+                <p>
+                    Лидов: {{ ad.leads_count }} |
+                    Активных клиентов: {{ ad.customers_count }} |
+                    Соотношение контрактов к затратам: {{ ad.profit|floatformat:2|default:"-" }} %
+                </p>
             </li>
             {% empty %}
                 <li class="list-group-item">Пока нет статистики по рекламным компаниям.</li>

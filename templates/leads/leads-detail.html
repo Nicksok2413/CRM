@@ -14,7 +14,14 @@
                 <p class="card-text">{{ object.phone }}</p>
                 <div class="d-flex justify-content-end fw-bold">{{ object.email }}</div>
                 <div class="d-flex justify-content-center fw-bold">
-                    <a href="{% url 'leads:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
+                    {% if perms.leads.change_potentialclient %}
+                        <a href="{% url 'leads:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-center fw-bold" style="padding-top: 10px;">
+                    {% if perms.leads.delete_potentialclient %}
+                        <a href="{% url 'leads:delete' object.pk %}" class="btn btn-danger">Удалить</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

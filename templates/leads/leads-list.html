@@ -14,40 +14,44 @@
         <ul class="list-group">
             {% for lead in leads %}
 
-            <!--
-            Используем тег with для вызова метода get_current_status
-            только один раз на каждой итерации цикла. Результат сохраняется
-            в переменную `current_status`.
-            -->
-            {% with current_status=lead.get_current_status %}
-
             <li class="list-group-item list-group-item-light d-flex justify-content-between">
                 <a href="{% url 'leads:detail' lead.pk %}" class="text-decoration-none link-dark">
                     {{ lead.last_name }} {{ lead.first_name }}
                 </a>
 
                 <div class="d-flex gap-2">
+
                     <!-- Проверяем, может ли пользователь создавать Активных клиентов -->
                     {% if perms.customers.add_activeclient %}
-                        <!-- Проверяем, не является ли этот лид уже активным клиентом -->
-                        {% if not current_status %}
-                            <!-- Если метод get_current_status() вернул None, значит, нет активных контрактов -->
-                            <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm">
-                                Активировать
-                            </a>
-                        {% else %}
-                            <!-- Если метод вернул объект ActiveClient, показываем бейдж -->
-                            <span class="badge bg-success">Активный клиент</span>
-                        {% endif %}
+
+                        <!--
+                        Используем тег with для вызова метода get_current_status
+                        только один раз на каждой итерации цикла. Результат сохраняется
+                        в переменную `current_status`.
+                        -->
+                        {% with current_status=lead.get_current_status %}
+
+                            <!-- Проверяем, не является ли этот лид уже активным клиентом -->
+                            {% if not current_status %}
+                                <!-- Если метод get_current_status() вернул None, значит, нет активных контрактов -->
+                                <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm">
+                                    Активировать
+                                </a>
+                            {% else %}
+                                <!-- Если метод вернул объект ActiveClient, показываем бейдж -->
+                                <span class="badge bg-success">Активный клиент</span>
+                            {% endif %}
+
+                        {% endwith %}
+
                     {% endif %}
-                    <!-- ============================================== -->
 
                     {% if perms.leads.delete_potentialclient %}
                         <a href="{% url 'leads:delete' lead.pk %}" class="btn btn-danger btn-sm">Удалить</a>
                     {% endif %}
                 </div>
             </li>
-            {% endwith %}
+
 
             {% empty %}
                 <li class="list-group-item">Пока нет ни одного лида.</li>

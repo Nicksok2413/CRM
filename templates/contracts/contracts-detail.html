@@ -14,7 +14,14 @@
                 <p class="card-text">{{ object.service.name }}. С {{ object.start_date|date:"d-m-Y" }} по {{ object.end_date|date:"d-m-Y" }}</p>
                 <div class="d-flex justify-content-end fw-bold">{{ object.amount }} руб</div>
                 <div class="d-flex justify-content-center fw-bold">
-                    <a href="{% url 'contracts:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
+                    {% if perms.contracts.change_contract %}
+                        <a href="{% url 'contracts:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-center fw-bold" style="padding-top: 10px;">
+                    {% if perms.contracts.delete_contract %}
+                        <a href="{% url 'contracts:delete' object.pk %}" class="btn btn-danger">Удалить</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
