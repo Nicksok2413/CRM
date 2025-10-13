@@ -35,6 +35,6 @@ class AdCampaign(BaseModel):
         return self.name
 
     class Meta:
-        verbose_name: str = "Рекламная кампания"
-        verbose_name_plural: str = "Рекламные кампании"
+        verbose_name = "Рекламная кампания"
+        verbose_name_plural = "Рекламные кампании"
         ordering = ["-created_at"]

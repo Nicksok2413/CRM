@@ -28,6 +28,6 @@ class Service(BaseModel):
         return self.name
 
     class Meta:
-        verbose_name: str = "Услуга"
-        verbose_name_plural: str = "Услуги"
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
         ordering = ["name"]

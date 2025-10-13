@@ -33,5 +33,5 @@ class ActiveClient(BaseModel):
         return str(self.potential_client)
 
     class Meta:
-        verbose_name: str = "Активный клиент"
-        verbose_name_plural: str = "Активные клиенты"
+        verbose_name = "Активный клиент"
+        verbose_name_plural = "Активные клиенты"

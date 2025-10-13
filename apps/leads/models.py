@@ -2,7 +2,7 @@
 Модели для приложения leads (потенциальные клиенты).
 """
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import phonenumbers
 from django.conf import settings
@@ -58,14 +58,14 @@ class PotentialClient(BaseModel):
     # менеджер `contracts_history`, который возвращает QuerySet объектов `ActiveClient`.
     contracts_history: models.Manager["ActiveClient"]
 
-    def get_current_status(self):
+    def get_current_status(self) -> "ActiveClient | None":
         """
         Возвращает текущую запись об активности клиента.
         Ищет в истории контрактов запись, которая не помечена как удаленная.
         """
         return self.contracts_history.filter(is_deleted=False).first()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Переопределяем метод save для нормализации телефонного номера
         к международному стандарту E.164 (+375291234567).
@@ -89,6 +89,6 @@ class PotentialClient(BaseModel):
         return f"{self.last_name} {self.first_name}"
 
     class Meta:
-        verbose_name: str = "Потенциальный клиент"
-        verbose_name_plural: str = "Потенциальные клиенты"
+        verbose_name = "Потенциальный клиент"
+        verbose_name_plural = "Потенциальные клиенты"
         ordering = ["-created_at"]

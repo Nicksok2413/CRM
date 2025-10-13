@@ -29,11 +29,8 @@ ignore = ["E501"]
 # Конфигурация Mypy (Проверка типов)
 # =================================================================
 [tool.mypy]
-# Включаем плагин для поддержки Django. Это самый важный пункт.
+# Включаем плагин для поддержки Django.
 plugins = "mypy_django_plugin.main"
-
-# Указываем путь к настройкам Django
-django_settings_module = "config.settings"
 
 # Включаем строгие проверки
 check_untyped_defs = true
@@ -46,3 +43,11 @@ ignore_missing_imports = true
 
 # Директории для исключения из проверки
 exclude = "migrations/"
+
+
+# =================================================================
+# Конфигурация плагина Django-stubs
+# =================================================================
+[tool.django-stubs]
+# Указываем путь к настройкам Django
+django_settings_module = "config.settings"

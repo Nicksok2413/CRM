@@ -72,5 +72,5 @@ class Profile(models.Model):
         return f"Профиль пользователя {self.user.username}"
 
     class Meta:
-        verbose_name: str = "Профиль"
-        verbose_name_plural: str = "Профили"
+        verbose_name = "Профиль"
+        verbose_name_plural = "Профили"

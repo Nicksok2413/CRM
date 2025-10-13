@@ -47,7 +47,7 @@ class Contract(BaseModel):
     start_date = models.DateField(verbose_name="Дата заключения")
     end_date = models.DateField(verbose_name="Дата окончания")
 
-    def clean(self):
+    def clean(self) -> None:
         """
         Переопределяем метод clean для добавления кастомной логики валидации,
         которая затрагивает несколько полей.
@@ -62,6 +62,6 @@ class Contract(BaseModel):
         return self.name
 
     class Meta:
-        verbose_name: str = "Контракт"
-        verbose_name_plural: str = "Контракты"
+        verbose_name = "Контракт"
+        verbose_name_plural = "Контракты"
         ordering = ["-start_date"]

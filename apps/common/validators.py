@@ -3,8 +3,10 @@
 """
 
 import phonenumbers
+from typing import Any
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.core.validators import RegexValidator
 from django.utils.deconstruct import deconstructible
 
@@ -16,21 +18,21 @@ class FileSizeValidator:
 
     Args:
         max_size_mb (int): Максимальный размер файла в мегабайтах.
-        message (str, optional): Кастомное сообщение об ошибке.
+        message (str | None): Кастомное сообщение об ошибке.
     """
 
-    def __init__(self, max_size_mb: int, message: str = None):
+    def __init__(self, max_size_mb: int, message: str | None = None) -> None:
         self.max_size_mb = max_size_mb
         self.message = message or f"Максимальный размер файла не должен превышать {self.max_size_mb} МБ."
 
-    def __call__(self, file):
+    def __call__(self, file: File) -> None:
         """
         Вызывается Django для выполнения валидации.
         """
         if file.size > self.max_size_mb * 1024 * 1024:
             raise ValidationError(self.message)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """
         Необходимо для сравнения объектов валидатора при создании миграций.
         """
@@ -51,7 +53,7 @@ validate_letters_and_hyphens = RegexValidator(
 )
 
 
-def validate_international_phone_number(value: str):
+def validate_international_phone_number(value: str) -> None:
     """
     Валидирует международный телефонный номер с помощью библиотеки phonenumbers.
     Проверяет, является ли номер валидным для региона по умолчанию или
