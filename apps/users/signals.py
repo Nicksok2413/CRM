@@ -5,7 +5,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import User, Profile
+from .models import Profile, User
 
 
 @receiver(post_save, sender=User)
@@ -22,6 +22,6 @@ def create_user_profile(sender: type[User], instance: User, created: bool, **kwa
     """
 
     # Проверяем, что это реальное создание объекта, а не загрузка из фикстур
-    if created and not kwargs.get('raw', False):
+    if created and not kwargs.get("raw", False):
         # Создаем профиль и связываем его с пользователем
         Profile.objects.create(user=instance)

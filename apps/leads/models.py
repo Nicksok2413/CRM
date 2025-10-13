@@ -2,10 +2,9 @@
 Модели для приложения leads (потенциальные клиенты).
 """
 
+from typing import TYPE_CHECKING
+
 import phonenumbers
-
-from typing import TYPE_CHECKING, Optional
-
 from django.conf import settings
 from django.db import models
 
@@ -23,15 +22,16 @@ class PotentialClient(BaseModel):
     """
     Модель для хранения данных о потенциальных клиентах (лидах).
     """
+
     first_name = models.CharField(
         max_length=100,
         verbose_name="Имя",
-        validators=[validate_letters_and_hyphens]  # Валидатор для имени
+        validators=[validate_letters_and_hyphens],  # Валидатор для имени
     )
     last_name = models.CharField(
         max_length=100,
         verbose_name="Фамилия",
-        validators=[validate_letters_and_hyphens]  # Валидатор для фамилии
+        validators=[validate_letters_and_hyphens],  # Валидатор для фамилии
     )
     email = models.EmailField(unique=True, verbose_name="Email")
     phone = models.CharField(
@@ -41,7 +41,7 @@ class PotentialClient(BaseModel):
         unique=True,  # Безопасно добавляем уникальность
         verbose_name="Телефон",
         validators=[validate_international_phone_number],  # Валидатор для телефона
-        help_text="Введите номер в любом удобном формате, включая международный."
+        help_text="Введите номер в любом удобном формате, включая международный.",
     )
 
     ad_campaign = models.ForeignKey(
@@ -49,8 +49,8 @@ class PotentialClient(BaseModel):
         on_delete=models.SET_NULL,  # Если кампания удалена, мы не хотим терять лида
         null=True,
         blank=True,
-        related_name='leads',
-        verbose_name="Рекламная кампания"
+        related_name="leads",
+        verbose_name="Рекламная кампания",
     )
 
     # Явная аннотация для обратной связи.
@@ -76,10 +76,7 @@ class PotentialClient(BaseModel):
                 parsed_phone = phonenumbers.parse(self.phone, settings.DEFAULT_PHONE_REGION)
 
                 # Форматируем номер в стандарт E.164
-                self.phone = phonenumbers.format_number(
-                    parsed_phone,
-                    phonenumbers.PhoneNumberFormat.E164
-                )
+                self.phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.E164)
             except phonenumbers.phonenumberutil.NumberParseException:
                 # Этот блок, по идее, никогда не должен сработать,
                 # так как валидатор уже проверил номер.
@@ -94,4 +91,4 @@ class PotentialClient(BaseModel):
     class Meta:
         verbose_name: str = "Потенциальный клиент"
         verbose_name_plural: str = "Потенциальные клиенты"
-        ordering = ['-created_at']
+        ordering = ["-created_at"]

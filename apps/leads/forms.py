@@ -3,12 +3,12 @@
 """
 
 import phonenumbers
-
 from django import forms
 from django.conf import settings
 
-from .models import PotentialClient
 from apps.users.models import User
+
+from .models import PotentialClient
 
 
 class PotentialClientForm(forms.ModelForm):
@@ -19,7 +19,7 @@ class PotentialClientForm(forms.ModelForm):
 
     class Meta:
         model = PotentialClient
-        fields = ('first_name', 'last_name', 'email', 'phone', 'ad_campaign')
+        fields = ("first_name", "last_name", "email", "phone", "ad_campaign")
 
     def clean_email(self) -> str:
         """
@@ -27,7 +27,7 @@ class PotentialClientForm(forms.ModelForm):
         Проверяет, не существует ли уже клиента или пользователя с таким email (без учета регистра).
         """
         # Получаем email из данных формы
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get("email")
 
         # 1. Создаем запрос для поиска дубликатов в лидах (включая "удаленных")
         # `iexact` обеспечивает регистронезависимый поиск.
@@ -41,9 +41,7 @@ class PotentialClientForm(forms.ModelForm):
         # Если запрос нашел хотя бы одного другого клиента с таким email
         if lead_query.exists():
             # Генерируем ошибку валидации, которая будет показана пользователю
-            raise forms.ValidationError(
-                "Клиент с таким email уже существует в системе (возможно, в архиве лидов)."
-            )
+            raise forms.ValidationError("Клиент с таким email уже существует в системе (возможно, в архиве лидов).")
 
         # 2. Создаем запрос для поиска дубликатов в пользователях (сотрудниках)
         # Для пользователей нет "мягкого удаления", так что используем .objects
@@ -53,9 +51,7 @@ class PotentialClientForm(forms.ModelForm):
         if user_query.exists():
             # Получаем пользователя, чтобы дать более информативное сообщение
             existing_user = user_query.first()
-            raise forms.ValidationError(
-                f"Этот email уже используется сотрудником: {existing_user.get_full_name()}."
-            )
+            raise forms.ValidationError(f"Этот email уже используется сотрудником: {existing_user.get_full_name()}.")
 
         # Если все в порядке, возвращаем очищенное значение
         return email
@@ -65,7 +61,7 @@ class PotentialClientForm(forms.ModelForm):
         Кастомный валидатор для поля phone.
         Нормализует номер и проверяет его на уникальность.
         """
-        phone = self.cleaned_data.get('phone')
+        phone = self.cleaned_data.get("phone")
 
         # Если поле телефона пустое, пропускаем валидацию
         if not phone:
@@ -74,10 +70,7 @@ class PotentialClientForm(forms.ModelForm):
         # 1. Нормализуем номер к стандарту E.164, как в модели
         try:
             parsed_phone = phonenumbers.parse(phone, settings.DEFAULT_PHONE_REGION)
-            normalized_phone = phonenumbers.format_number(
-                parsed_phone,
-                phonenumbers.PhoneNumberFormat.E164
-            )
+            normalized_phone = phonenumbers.format_number(parsed_phone, phonenumbers.PhoneNumberFormat.E164)
         except phonenumbers.phonenumberutil.NumberParseException:
             # Эта ошибка маловероятна, так как основной валидатор уже сработал,
             # но оставляем для надежности.

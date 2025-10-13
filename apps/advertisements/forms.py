@@ -14,4 +14,4 @@ class AdCampaignForm(forms.ModelForm):
 
     class Meta:
         model = AdCampaign
-        fields = ('name', 'service', 'channel', 'budget')
+        fields = ("name", "service", "channel", "budget")

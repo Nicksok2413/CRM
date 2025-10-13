@@ -11,15 +11,14 @@ from .views import (
 
 # Пространство имен для URL-адресов этого приложения
 # Позволит использовать, например, `{% url 'ads:list' %}` в шаблонах
-app_name = 'ads'
+app_name = "ads"
 
 urlpatterns = [
-    path('', AdCampaignListView.as_view(), name='list'),
-    path('new/', AdCampaignCreateView.as_view(), name='create'),
-    path('<int:pk>/', AdCampaignDetailView.as_view(), name='detail'),
-    path('<int:pk>/delete/', AdCampaignDeleteView.as_view(), name='delete'),
-    path('<int:pk>/edit/', AdCampaignUpdateView.as_view(), name='edit'),
-
+    path("", AdCampaignListView.as_view(), name="list"),
+    path("new/", AdCampaignCreateView.as_view(), name="create"),
+    path("<int:pk>/", AdCampaignDetailView.as_view(), name="detail"),
+    path("<int:pk>/delete/", AdCampaignDeleteView.as_view(), name="delete"),
+    path("<int:pk>/edit/", AdCampaignUpdateView.as_view(), name="edit"),
     # URL для статистики
-    path('statistic/', AdCampaignStatisticView.as_view(), name='statistic'),
+    path("statistic/", AdCampaignStatisticView.as_view(), name="statistic"),
 ]

@@ -3,7 +3,6 @@
 """
 
 import phonenumbers
-
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -19,6 +18,7 @@ class FileSizeValidator:
         max_size_mb (int): Максимальный размер файла в мегабайтах.
         message (str, optional): Кастомное сообщение об ошибке.
     """
+
     def __init__(self, max_size_mb: int, message: str = None):
         self.max_size_mb = max_size_mb
         self.message = message or f"Максимальный размер файла не должен превышать {self.max_size_mb} МБ."
@@ -35,10 +35,11 @@ class FileSizeValidator:
         Необходимо для сравнения объектов валидатора при создании миграций.
         """
         return (
-            isinstance(other, self.__class__) and
-            self.max_size_mb == other.max_size_mb and
-            self.message == other.message
+            isinstance(other, self.__class__)
+            and self.max_size_mb == other.max_size_mb
+            and self.message == other.message
         )
+
 
 # Создаем конкретные экземпляры валидаторов
 validate_image_size = FileSizeValidator(max_size_mb=settings.MAX_IMAGE_SIZE_MB)
@@ -46,8 +47,7 @@ validate_document_size = FileSizeValidator(max_size_mb=settings.MAX_DOCUMENT_SIZ
 
 # Валидатор для полей, где должны быть только буквы и дефис (ФИО)
 validate_letters_and_hyphens = RegexValidator(
-    r'^[а-яА-ЯёЁa-zA-Z\s-]+$',
-    message='Это поле может содержать только буквы, пробелы и дефисы.'
+    r"^[а-яА-ЯёЁa-zA-Z\s-]+$", message="Это поле может содержать только буквы, пробелы и дефисы."
 )
 
 

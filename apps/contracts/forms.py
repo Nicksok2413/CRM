@@ -3,10 +3,8 @@
 """
 
 from django import forms
-from django.core.validators import FileExtensionValidator
 
 from .models import Contract
-from apps.common.validators import validate_document_size
 
 
 class ContractForm(forms.ModelForm):
@@ -16,16 +14,12 @@ class ContractForm(forms.ModelForm):
 
     class Meta:
         model = Contract
-        fields = ('name', 'service', 'document', 'amount', 'start_date', 'end_date')
+        fields = ("name", "service", "document", "amount", "start_date", "end_date")
 
         # Для полей дат добавляем виджеты с выбором даты, чтобы улучшить UX.
         widgets = {
-            'start_date': forms.DateInput(
-                attrs={'placeholder': 'Выберите дату...', 'class': 'datepicker'}
-            ),
-            'end_date': forms.DateInput(
-                attrs={'placeholder': 'Выберите дату...', 'class': 'datepicker'}
-            ),
+            "start_date": forms.DateInput(attrs={"placeholder": "Выберите дату...", "class": "datepicker"}),
+            "end_date": forms.DateInput(attrs={"placeholder": "Выберите дату...", "class": "datepicker"}),
         }
 
     def clean(self):
@@ -40,6 +34,6 @@ class ContractForm(forms.ModelForm):
         # Проверяем, что дата окончания не раньше даты начала
         if start_date and end_date and end_date < start_date:
             # Привязываем ошибку к конкретному полю, чтобы она отображалась рядом с ним
-            self.add_error('end_date', "Дата окончания контракта не может быть раньше даты его начала.")
+            self.add_error("end_date", "Дата окончания контракта не может быть раньше даты его начала.")
 
         return cleaned_data

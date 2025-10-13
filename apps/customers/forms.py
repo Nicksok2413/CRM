@@ -5,8 +5,9 @@
 from django import forms
 from django.db.models import Q
 
-from .models import ActiveClient
 from apps.contracts.models import Contract
+
+from .models import ActiveClient
 
 
 class ActiveClientCreateForm(forms.ModelForm):
@@ -23,16 +24,16 @@ class ActiveClientCreateForm(forms.ModelForm):
         # Фильтруем queryset для поля 'contract'.
         # Показываем только те контракты, которые еще не связаны
         # ни с одним активным клиентом (`active_client__isnull=True`).
-        self.fields['contract'].queryset = Contract.objects.filter(active_client__isnull=True)
+        self.fields["contract"].queryset = Contract.objects.filter(active_client__isnull=True)
 
     class Meta:
         model = ActiveClient
-        fields = ('potential_client', 'contract')
+        fields = ("potential_client", "contract")
 
         # Прячем поле `potential_client`, так как оно будет
         # заполнено автоматически из URL и не должно редактироваться пользователем.
         widgets = {
-            'potential_client': forms.HiddenInput(),
+            "potential_client": forms.HiddenInput(),
         }
 
 
@@ -42,6 +43,7 @@ class ActiveClientUpdateForm(forms.ModelForm):
 
     Основной сценарий использования: смена контракта для существующего активного клиента.
     """
+
     def __init__(self, *args, **kwargs):
         """
         Переопределяем конструктор для кастомизации поля 'contract'.
@@ -50,7 +52,7 @@ class ActiveClientUpdateForm(forms.ModelForm):
 
         # `instance` - это редактируемый объект ActiveClient, который
         # Django передает в форму при ее инициализации в UpdateView.
-        instance = kwargs.get('instance')
+        instance = kwargs.get("instance")
 
         # Убеждаемся, что мы работаем с существующим объектом (а не создаем новый).
         if instance and instance.pk:
@@ -60,7 +62,7 @@ class ActiveClientUpdateForm(forms.ModelForm):
             # 2. Текущий контракт, который уже присвоен этому клиенту (pk=instance.contract.pk).
             #    Это необходимо, чтобы текущее значение отображалось в форме корректно.
             # `Q` используем для создания сложного SQL-запроса с логикой "ИЛИ" (`|`).
-            self.fields['contract'].queryset = Contract.objects.filter(
+            self.fields["contract"].queryset = Contract.objects.filter(
                 Q(active_client__isnull=True) | Q(pk=instance.contract.pk)
             )
 
@@ -68,4 +70,4 @@ class ActiveClientUpdateForm(forms.ModelForm):
         model = ActiveClient
         # При редактировании Активного клиента, единственное, что имеет смысл менять - это его контракт.
         # Данные самого человека (ФИО, email) редактируются в его карточке Лида.
-        fields = ('contract',)
+        fields = ("contract",)

@@ -19,6 +19,7 @@ class User(AbstractUser):
     аутентификации Django, но позволяет добавлять дополнительные поля.
     Отвечает только за аутентификацию и базовую идентификацию (ФИО, email).
     """
+
     # Добавляем необязательное поле "Отчество"
     patronymic = models.CharField(max_length=150, blank=True, verbose_name="Отчество")
 
@@ -44,12 +45,13 @@ class Profile(models.Model):
     Модель профиля пользователя. Хранит всю дополнительную информацию,
     не связанную напрямую с аутентификацией.
     """
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         primary_key=True,
-        related_name='profile',
-        verbose_name="Пользователь"
+        related_name="profile",
+        verbose_name="Пользователь",
     )
 
     # Добавляем необязательное поле "Должность"
@@ -62,8 +64,8 @@ class Profile(models.Model):
         verbose_name="Фото",
         validators=[
             validate_image_size,
-            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png']),
-        ]
+            FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"]),
+        ],
     )
 
     def __str__(self) -> str:

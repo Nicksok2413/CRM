@@ -7,10 +7,9 @@ import random
 from typing import Any
 
 import factory  # noqa
-from faker import Faker  # noqa
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from faker import Faker  # noqa
 
 # Импортируем все модели
 from apps.advertisements.models import AdCampaign
@@ -21,12 +20,13 @@ from apps.products.models import Service
 
 # Инициализируем Faker для генерации данных
 # 'ru_RU' для генерации русскоязычных имен, текстов и т.д.
-faker = Faker('ru_RU')
+faker = Faker("ru_RU")
 
 
 # ======================================================================
 # ФАБРИКИ ДЛЯ МОДЕЛЕЙ
 # ======================================================================
+
 
 class ServiceFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -44,7 +44,7 @@ class AdCampaignFactory(factory.django.DjangoModelFactory):
     name = factory.LazyFunction(lambda: f"РК {faker.company()}")
     # Автоматически создаст связанную Услугу с помощью ServiceFactory
     service = factory.SubFactory(ServiceFactory)
-    channel = factory.LazyFunction(lambda: random.choice(['Яндекс.Директ', 'Google Ads', 'VK', 'Facebook']))
+    channel = factory.LazyFunction(lambda: random.choice(["Яндекс.Директ", "Google Ads", "VK", "Facebook"]))
     budget = factory.LazyFunction(lambda: round(random.uniform(50000, 500000), 2))
 
 
@@ -81,51 +81,46 @@ class ActiveClientFactory(factory.django.DjangoModelFactory):
 
     # Создаем контракт, который логически связан с лидом
     # Услуга в контракте должна быть той же, что и в рекламной кампании лида
-    contract = factory.LazyAttribute(
-        lambda o: ContractFactory(service=o.potential_client.ad_campaign.service)
-    )
+    contract = factory.LazyAttribute(lambda o: ContractFactory(service=o.potential_client.ad_campaign.service))
 
 
 # ======================================================================
 # КЛАСС КОМАНДЫ
 # ======================================================================
 
+
 class Command(BaseCommand):
     """
     Django management-команда для наполнения БД.
     """
-    help = 'Наполняет базу данных тестовыми данными'
+
+    help = "Наполняет базу данных тестовыми данными"
 
     def add_arguments(self, parser):
         """
         Добавляем аргумент командной строки для указания количества
         создаваемых записей.
         """
-        parser.add_argument(
-            '--count',
-            type=int,
-            default=10,
-            help='Количество создаваемых записей для каждой модели'
-        )
+        parser.add_argument("--count", type=int, default=10, help="Количество создаваемых записей для каждой модели")
 
     @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         """
         Основной метод команды, который будет выполнен при ее запуске.
         """
-        count = options['count']
-        self.stdout.write(self.style.SUCCESS(f'Начинаем наполнение базы данных. Будет создано по ~{count} записей...'))
+        count = options["count"]
+        self.stdout.write(self.style.SUCCESS(f"Начинаем наполнение базы данных. Будет создано по ~{count} записей..."))
 
         # 1. Создаем услуги и рекламные кампании
 
-        self.stdout.write('Создаем услуги и рекламные кампании...')
+        self.stdout.write("Создаем услуги и рекламные кампании...")
 
         # `create_batch` создает указанное количество объектов
         campaigns = AdCampaignFactory.create_batch(count)
 
         # 2. Создаем потенциальных клиентов (лидов)
 
-        self.stdout.write('Создаем потенциальных клиентов...')
+        self.stdout.write("Создаем потенциальных клиентов...")
 
         leads = []
 
@@ -150,7 +145,7 @@ class Command(BaseCommand):
 
         # 4. "Активируем" часть клиентов
 
-        self.stdout.write('Создаем активных клиентов и связанные с ними контракты...')
+        self.stdout.write("Создаем активных клиентов и связанные с ними контракты...")
 
         # Перемешиваем список лидов
         random.shuffle(leads)
@@ -164,7 +159,7 @@ class Command(BaseCommand):
 
         # 5. Создаем архивные контракты для некоторых из уже активных клиентов
 
-        self.stdout.write('Создаем архивные (старые) контракты...')
+        self.stdout.write("Создаем архивные (старые) контракты...")
 
         # Список активных клиентов
         active_leads_with_history = leads[:num_active_clients]
@@ -173,10 +168,10 @@ class Command(BaseCommand):
         random.shuffle(active_leads_with_history)
 
         # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту
-        for lead in active_leads_with_history[:len(active_leads_with_history) // 5]:
+        for lead in active_leads_with_history[: len(active_leads_with_history) // 5]:
             # Создаем еще одну запись ActiveClient
             old_active_client_record = ActiveClientFactory(potential_client=lead)
             # И сразу же "мягко" ее удаляем, чтобы она стала архивной
             old_active_client_record.soft_delete()  # noqa
 
-        self.stdout.write(self.style.SUCCESS('База данных успешно наполнена!'))
+        self.stdout.write(self.style.SUCCESS("База данных успешно наполнена!"))

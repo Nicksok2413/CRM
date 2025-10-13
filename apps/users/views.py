@@ -19,7 +19,8 @@ class IndexView(LoginRequiredMixin, TemplateView):
     - LoginRequiredMixin: Запрещает доступ неавторизованным пользователям.
     - TemplateView: Базовый класс для отображения статичного шаблона.
     """
-    template_name = 'users/index.html'
+
+    template_name = "users/index.html"
 
     def get_context_data(self, **kwargs) -> dict:
         """
@@ -30,12 +31,12 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
         # Добавляем в контекст статистику (количество записей в моделях)
         # Django ORM .count() - быстрый и эффективный способ выполнить SQL-запрос `SELECT COUNT(*) ...`
-        context['products_count'] = Service.objects.count()
-        context['advertisements_count'] = AdCampaign.objects.count()
-        context['leads_count'] = PotentialClient.objects.count()
-        context['customers_count'] = ActiveClient.objects.count()
+        context["products_count"] = Service.objects.count()
+        context["advertisements_count"] = AdCampaign.objects.count()
+        context["leads_count"] = PotentialClient.objects.count()
+        context["customers_count"] = ActiveClient.objects.count()
 
         # Добавляем заголовок страницы
-        context['title'] = 'Главная страница'
+        context["title"] = "Главная страница"
 
         return context

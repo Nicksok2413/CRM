@@ -25,6 +25,7 @@ class BaseModel(models.Model):
         - objects: возвращает только активные (не удаленные) записи.
         - all_objects: возвращает все записи, включая удаленные.
     """
+
     is_deleted = models.BooleanField(default=False, verbose_name="Удалено")
 
     # Временные метки

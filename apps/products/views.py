@@ -4,7 +4,7 @@
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from .forms import ServiceForm
@@ -13,57 +13,62 @@ from .models import Service
 
 class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     """Представление для отображения списка услуг."""
+
     model = Service
-    template_name = 'products/products-list.html'
-    context_object_name = 'products'
-    permission_required = 'products.view_service'
+    template_name = "products/products-list.html"
+    context_object_name = "products"
+    permission_required = "products.view_service"
 
 
 class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     """Представление для детального просмотра услуги."""
+
     model = Service
-    template_name = 'products/products-detail.html'
-    permission_required = 'products.view_service'
+    template_name = "products/products-detail.html"
+    permission_required = "products.view_service"
 
 
 class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     """Представление для создания новой услуги."""
+
     model = Service
     form_class = ServiceForm
-    template_name = 'products/products-create.html'
-    permission_required = 'products.add_service'
+    template_name = "products/products-create.html"
+    permission_required = "products.add_service"
 
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
         объекта после успешного создания.
         """
-        return reverse('products:detail', kwargs={'pk': self.object.pk})
+        return reverse("products:detail", kwargs={"pk": self.object.pk})
 
 
 class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования услуги."""
+
     model = Service
     form_class = ServiceForm
-    template_name = 'products/products-edit.html'
-    permission_required = 'products.change_service'
+    template_name = "products/products-edit.html"
+    permission_required = "products.change_service"
 
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
         объекта после успешного редактирования.
         """
-        return reverse('products:detail', kwargs={'pk': self.object.pk})
+        return reverse("products:detail", kwargs={"pk": self.object.pk})
 
 
 class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     """
     Представление для "мягкого" удаления услуги.
     """
+
     model = Service
-    template_name = 'products/products-delete.html'
-    success_url = reverse_lazy('products:list')
-    permission_required = 'products.delete_service'
+    template_name = "products/products-delete.html"
+    success_url = reverse_lazy("products:list")
+    permission_required = "products.delete_service"
 
     def form_valid(self, form) -> HttpResponseRedirect:
         """
