@@ -22,9 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config("DEBUG", default=False, cast=bool)
 
 # ======================================================================
 # ...
@@ -42,45 +42,45 @@ INTERNAL_IPS = [
 
 if DEBUG:
     import socket
+
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS.append("10.0.2.2")
-    INTERNAL_IPS.extend(
-        [ip[: ip.rfind(".")] + ".1" for ip in ips]
-    )
+    INTERNAL_IPS.extend([ip[: ip.rfind(".")] + ".1" for ip in ips])
 
 # ======================================================================
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # Приложения
-    'apps.advertisements.apps.AdvertisementsConfig',
-    'apps.common.apps.CommonConfig',
-    'apps.contracts.apps.ContractsConfig',
-    'apps.customers.apps.CustomersConfig',
-    'apps.leads.apps.LeadsConfig',
-    'apps.products.apps.ProductsConfig',
-    'apps.users.apps.UsersConfig',
+    "apps.advertisements.apps.AdvertisementsConfig",
+    "apps.common.apps.CommonConfig",
+    "apps.contracts.apps.ContractsConfig",
+    "apps.customers.apps.CustomersConfig",
+    "apps.leads.apps.LeadsConfig",
+    "apps.products.apps.ProductsConfig",
+    "apps.users.apps.UsersConfig",
+    # Сторонние приложения
+    "django_filters",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 
 # ======================================================================
@@ -89,16 +89,16 @@ ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
         # Указываем Django искать шаблоны в корневой папке templates
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -106,7 +106,7 @@ TEMPLATES = [
 
 # ======================================================================
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # ======================================================================
@@ -115,13 +115,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ======================================================================
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST'),
-        'PORT': config('DB_PORT', cast=int), # `cast=int` преобразует строку из .env в число
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": config("DB_PORT", cast=int),  # `cast=int` преобразует строку из .env в число
     }
 }
 
@@ -132,16 +132,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -151,9 +151,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 # ======================================================================
 
-LANGUAGE_CODE = 'ru-RU'
+LANGUAGE_CODE = "ru-RU"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -165,7 +165,7 @@ USE_TZ = True
 # Django будет пробовать их по порядку при валидации.
 # `%d` - день, `%m` - месяц, `%Y` - год.
 DATE_INPUT_FORMATS = [
-    '%Y-%m-%d',  # '2025-10-25' (стандартный)
+    "%Y-%m-%d",  # '2025-10-25' (стандартный)
 ]
 
 
@@ -175,11 +175,11 @@ DATE_INPUT_FORMATS = [
 # ======================================================================
 
 # URL, по которому будут доступны статические файлы в браузере
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # Директория, где Django будет искать статические файлы проекта
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
 # Директория, куда `collectstatic` будет собирать все статические файлы для продакшена
@@ -189,9 +189,9 @@ STATICFILES_DIRS = [
 # ======================================================================
 # НАСТРОЙКИ МЕДИА ФАЙЛОВ
 # ======================================================================
-MEDIA_URL = '/media/'
+MEDIA_URL = "/media/"
 
-MEDIA_ROOT = BASE_DIR / 'uploads'
+MEDIA_ROOT = BASE_DIR / "uploads"
 
 # ======================================================================
 
@@ -199,7 +199,7 @@ MEDIA_ROOT = BASE_DIR / 'uploads'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
 # ======================================================================
@@ -207,21 +207,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ======================================================================
 
 # Указываем Django использовать кастомную модель пользователя
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 # Указываем Django, как проверять логин/пароль и как загружать права доступа
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    "django.contrib.auth.backends.ModelBackend",
 ]
 
 # URL для перенаправления неавторизованных пользователей
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = "/accounts/login/"
 
 # URL, на который пользователь будет перенаправлен после успешного входа
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = "/"
 
 # URL, на который пользователь будет перенаправлен после выхода
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 
 # ======================================================================
@@ -230,7 +230,7 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Регион по умолчанию для парсинга номеров без кода страны (ISO 3166-1 alpha-2).
 # 'BY' - Беларусь, 'RU' - Россия, 'KZ' - Казахстан.
-DEFAULT_PHONE_REGION = 'BY'
+DEFAULT_PHONE_REGION = "BY"
 
 
 # ======================================================================
