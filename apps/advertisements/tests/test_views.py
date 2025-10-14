@@ -28,7 +28,7 @@ def test_ad_campaign_statistic_view_manual_data(client, django_user_model):
     user.user_permissions.add(permission)
     client.login(username="statistic_viewer", password="password")
 
-    # --- Создаем сущности шаг за шагом ---
+    # --- Создаем сущности ---
 
     # 1. Создаем услугу
     service = Service.objects.create(name="Тестовая услуга", cost=100)
@@ -37,16 +37,16 @@ def test_ad_campaign_statistic_view_manual_data(client, django_user_model):
     target_campaign = AdCampaign.objects.create(name="Целевая кампания", service=service, budget=1000.00)
     other_campaign = AdCampaign.objects.create(name="Другая кампания", service=service, budget=5000.00)
 
-    # 3. Создаем 3 лида для ЦЕЛЕВОЙ кампании
+    # 3. Создаем 3 лида для целевой кампании
     lead1 = PotentialClient.objects.create(
         first_name="Иван", last_name="Тестовый1", email="t1@test.com", ad_campaign=target_campaign
     )
     lead2 = PotentialClient.objects.create(
         first_name="Петр", last_name="Тестовый2", email="t2@test.com", ad_campaign=target_campaign
     )
-    # lead3 = PotentialClient.objects.create(
-    #     first_name="Сидор", last_name="Тестовый3", email="t3@test.com", ad_campaign=target_campaign
-    # )
+    lead3 = PotentialClient.objects.create(
+        first_name="Сидор", last_name="Тестовый3", email="t3@test.com", ad_campaign=target_campaign
+    )
 
     # 4. Создаем 2 контракта для этой же услуги
     contract1 = Contract.objects.create(
@@ -85,18 +85,18 @@ def test_ad_campaign_statistic_view_manual_data(client, django_user_model):
     all_campaign_stats = response.context["ads"]
     assert len(all_campaign_stats) == 2
 
-    # Находим статистику для ЦЕЛЕВОЙ кампании
+    # Находим статистику для целевой кампании
     target_stats = [stats for stats in all_campaign_stats if stats.pk == target_campaign.pk][0]
-    # Находим статистику для ДРУГОЙ кампании
+    # Находим статистику для другой кампании
     other_stats = [stats for stats in all_campaign_stats if stats.pk == other_campaign.pk][0]
 
-    # --- Проверяем ЦЕЛЕВУЮ кампанию ---
+    # --- Проверяем целевую кампанию ---
     assert target_stats.leads_count == 3, "Неверное кол-во лидов у целевой кампании"
     assert target_stats.customers_count == 2, "Неверное кол-во активных клиентов у целевой кампании"
     assert target_stats.total_revenue == 2000.00, "Неверный доход у целевой кампании"
     assert target_stats.profit == 200.00, "Неверная рентабельность у целевой кампании"
 
-    # --- Проверяем ДРУГУЮ кампанию, чтобы убедиться в изоляции ---
+    # --- Проверяем другую кампанию, чтобы убедиться в изоляции ---
     assert other_stats.leads_count == 1, "Неверное кол-во лидов у другой кампании"
     assert other_stats.customers_count == 1, "Неверное кол-во активных клиентов у другой кампании"
     assert other_stats.total_revenue == 9999.00, "Неверный доход у другой кампании"
