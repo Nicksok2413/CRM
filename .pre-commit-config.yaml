@@ -49,4 +49,12 @@ repos:
         args: [ "apps/" ]
         # Указываем pre-commit, что для работы этого хука
         # нужно установить дополнительные зависимости в его изолированную среду.
-        additional_dependencies: [ "django-stubs==5.2.7" ]
+        additional_dependencies: [
+          # Добавляем все зависимости, необходимые для загрузки settings.py
+          "django-stubs==5.2.7",
+          "python-decouple==3.8",
+          # Возможно, понадобится и psycopg, если он используется в settings
+          "psycopg[binary]==3.2.10",
+          # И phonenumberslite, так как он тоже используется в settings
+          "phonenumberslite==9.0.16",
+        ]
