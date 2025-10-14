@@ -1,10 +1,10 @@
 {% extends "_base.html" %}
 
 {% block content %}
-<h2 class="fw-bold">Статистика рекламных компаний</h2>
+<h2 class="fw-bold">Статистика рекламных кампаний</h2>
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
     <div class="hstack gap-3 pb-4">
-        <a href="{% url 'ads:list' %}" class="btn btn-success p-2">К списку рекламных компаний</a>
+        <a href="{% url 'ads:list' %}" class="btn btn-success p-2">К списку рекламных кампаний</a>
     </div>
     <div class="col">
         <ul class="list-group">
@@ -13,7 +13,7 @@
 
                 <!-- Проверяем, есть ли у текущего пользователя право на просмотр детальной информации -->
                 {% if perms.advertisements.view_adcampaign %}
-                    <!-- Если право есть, показываем кликабельную ссылку -->
+                    <!-- Если право есть, показываем кликабельную ссылку на детальную статистику каждой кампании -->
                     <a href="{% url 'ads:detail_statistic' ad.pk %}" class="text-decoration-none link-dark fw-bold">
                         {{ ad.name }}
                     </a>
@@ -29,7 +29,7 @@
                 </p>
             </li>
             {% empty %}
-                <li class="list-group-item">Пока нет статистики по рекламным компаниям.</li>
+                <li class="list-group-item">Пока нет статистики по рекламным кампаниям.</li>
             {% endfor %}
         </ul>
     </div>

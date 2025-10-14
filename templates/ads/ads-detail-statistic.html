@@ -5,6 +5,9 @@
 
 <!-- Блок с KPI -->
 <div class="row bg-white px-3 py-3 mx-2 my-2 rounded shadow-sm">
+    <div class="hstack gap-3 pb-4">
+        <a href="{% url 'ads:statistic' %}" class="btn btn-success p-2">К статистике всех рекламных кампаний</a>
+    </div>
     <div class="col-md-3"><strong>Бюджет:</strong> {{ ad.budget|floatformat:2 }} руб.</div>
     <div class="col-md-3"><strong>Общий доход:</strong> {{ total_revenue|floatformat:2 }} руб.</div>
     <div class="col-md-3"><strong>Привлечено лидов:</strong> {{ total_leads }}</div>
