@@ -5,7 +5,7 @@
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Q, QuerySet, Sum, When
+from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
@@ -121,10 +121,9 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
 
         # 2. Добавляем аннотации
         annotated_queryset = queryset.annotate(
-            # Количество уникальных лидов для каждой кампании
-            leads_count=Count("leads", distinct=True),
-            # Количество активных клиентов.
-            # Мы считаем только те записи `ActiveClient`, которые не были "мягко" удалены.
+            # Количество уникальных лидов для каждой кампании, которые не были "мягко" удалены.
+            leads_count=Count("leads", filter=Q(leads__is_deleted=False), distinct=True),
+            # Количество активных клиентов для каждой кампании, которые не были "мягко" удалены.
             customers_count=Count(
                 "leads__contracts_history", filter=Q(leads__contracts_history__is_deleted=False), distinct=True
             ),
@@ -166,17 +165,16 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
         context = super().get_context_data(**kwargs)
         campaign = self.get_object()
 
-        # Получаем всех лидов этой кампании с предзагрузкой связанных данных
-        # .select_related() - для ForeignKey (contract)
-        # .prefetch_related() - для обратной связи ForeignKey (contracts_history)
-        leads = campaign.leads.all().prefetch_related("contracts_history__contract")
-
-        # Рассчитываем общую статистику для этой кампании (можно взять из аннотаций,
-        # но для одной кампании проще посчитать так)
-        active_clients = [lead for lead in leads if lead.get_current_status()]
-        total_revenue = sum(
-            ac.contract.amount for ac in ActiveClient.objects.filter(potential_client__in=active_clients)
+        # Получаем всех лидов этой кампании, предзагружая историю контрактов
+        # И внутри этой предзагрузки также подтягиваем данные самих контрактов.
+        leads = campaign.leads.all().prefetch_related(
+            # Prefetch - для обратной связи (может быть много записей)
+            Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
         )
+
+        # Рассчитываем общую статистику для этой кампании
+        active_clients = [lead.get_current_status() for lead in leads if lead.get_current_status() is not None]
+        total_revenue = sum(ac.contract.amount for ac in active_clients)
 
         context["leads_list"] = leads
         context["total_leads"] = leads.count()
