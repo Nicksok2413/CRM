@@ -47,3 +47,6 @@ repos:
         require_serial: true
         # Передаем путь к нашему коду.
         args: [ "apps/" ]
+        # Указываем pre-commit, что для работы этого хука
+        # нужно установить дополнительные зависимости в его изолированную среду.
+        additional_dependencies: [ "django-stubs==5.2.7" ]
