@@ -1,0 +1,68 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<h2 class="fw-bold">Детальная статистика: {{ ad.name }}</h2>
+
+<!-- Блок с KPI -->
+<div class="row bg-white px-3 py-3 mx-2 my-2 rounded shadow-sm">
+    <div class="col-md-3"><strong>Бюджет:</strong> {{ ad.budget|floatformat:2 }} руб.</div>
+    <div class="col-md-3"><strong>Общий доход:</strong> {{ total_revenue|floatformat:2 }} руб.</div>
+    <div class="col-md-3"><strong>Привлечено лидов:</strong> {{ total_leads }}</div>
+    <div class="col-md-3"><strong>Активных клиентов:</strong> {{ total_active_clients }}</div>
+    <div class="col-md-3"><strong>Рентабельность (ROI):</strong> {{ profit|floatformat:2|default:"-" }} %</div>
+</div>
+
+<!-- Таблица с лидами -->
+<div class="row bg-white px-3 py-3 mx-2 my-4 rounded shadow-lg">
+    <h4 class="mb-3">Список лидов</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ФИО</th>
+                <th>Email</th>
+                <th>Статус</th>
+                <th>Сумма контракта</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lead in leads_list %}
+            <tr>
+                <td>
+                    {% if perms.leads.view_potentialclient %}
+                        <a href="{% url 'leads:detail' lead.pk %}">{{ lead }}</a>
+                    {% else %}
+                        {{ lead }}
+                    {% endif %}
+                </td>
+                <td>{{ lead.email }}</td>
+                <td>
+                    {% with current_status=lead.get_current_status %}
+                        {% if current_status %}
+                            <span class="badge bg-success">Активный</span>
+                        {% elif lead.contracts_history.exists %}
+                            <span class="badge bg-secondary">Архивный</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">В работе</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with current_status=lead.get_current_status %}
+                        {% if current_status %}
+                            {{ current_status.contract.amount|floatformat:2 }} руб.
+                        {% else %}
+                            -
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">Для этой кампании еще нет лидов.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -12,6 +12,8 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
+from apps.customers.models import ActiveClient
+
 from .forms import AdCampaignForm
 from .models import AdCampaign
 
@@ -148,3 +150,42 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
         )
 
         return annotated_queryset
+
+
+class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    """
+    Представление для детальной статистики по одной рекламной кампании.
+    """
+
+    model = AdCampaign
+    template_name = "ads/ads-detail-statistic.html"  # Новый шаблон
+    context_object_name = "ad"
+    permission_required = "advertisements.view_adcampaign"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        campaign = self.get_object()
+
+        # Получаем всех лидов этой кампании с предзагрузкой связанных данных
+        # .select_related() - для ForeignKey (contract)
+        # .prefetch_related() - для обратной связи ForeignKey (contracts_history)
+        leads = campaign.leads.all().prefetch_related("contracts_history__contract")
+
+        # Рассчитываем общую статистику для этой кампании (можно взять из аннотаций,
+        # но для одной кампании проще посчитать так)
+        active_clients = [lead for lead in leads if lead.get_current_status()]
+        total_revenue = sum(
+            ac.contract.amount for ac in ActiveClient.objects.filter(potential_client__in=active_clients)
+        )
+
+        context["leads_list"] = leads
+        context["total_leads"] = leads.count()
+        context["total_active_clients"] = len(active_clients)
+        context["total_revenue"] = total_revenue
+
+        if campaign.budget > 0:
+            context["profit"] = (total_revenue / campaign.budget) * 100
+        else:
+            context["profit"] = None
+
+        return context

@@ -14,7 +14,7 @@
                 <!-- Проверяем, есть ли у текущего пользователя право на просмотр детальной информации -->
                 {% if perms.advertisements.view_adcampaign %}
                     <!-- Если право есть, показываем кликабельную ссылку -->
-                    <a href="{% url 'ads:detail' ad.pk %}" class="text-decoration-none link-dark">
+                    <a href="{% url 'ads:detail_statistic' ad.pk %}" class="text-decoration-none link-dark fw-bold">
                         {{ ad.name }}
                     </a>
                 {% else %}
