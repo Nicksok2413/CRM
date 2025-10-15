@@ -31,10 +31,8 @@
         </div>
 
         <!-- Выпадающий список для сортировки -->
-        <div class="col-auto">
+        <div class="row-auto">
             {{ filter.form.sort.label_tag }}
-        </div>
-        <div class="col-auto">
             {{ filter.form.sort }}
         </div>
 
@@ -54,18 +52,56 @@
     </div>
 
     <div class="col">
-        <ul class="list-group">
-            {% for contract in contracts %}
-            <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'contracts:detail' contract.pk %}" class="text-decoration-none link-dark">{{ contract.name }}</a>
-                {% if perms.contracts.delete_contract %}
-                    <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
-                {% endif %}
-            </li>
-            {% empty %}
-                <li class="list-group-item">Пока нет ни одного контракта.</li>
-            {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Услуга</th>
+                    <th>Дата заключения</th>
+                    <th>Дата окончания</th>
+                    <th>Сумма</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contract in contracts %}
+                <tr>
+                    <td>
+                        {% if perms.contracts.view_contract %}
+                            <a href="{% url 'contracts:detail' contract.pk %}">{{ contract.name }}</a>
+                        {% else %}
+                            {{ contract.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if perms.products.view_service %}
+                            <a href="{% url 'products:detail' contract.service.pk %}">{{ contract.service.name }}</a>
+                        {% else %}
+                            {{ contract.service.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ contract.start_date|date:"d-m-Y" }}
+                    </td>
+                    <td>
+                        {{ contract.end_date|date:"d-m-Y" }}
+                    </td>
+                    <td>
+                        {{ contract.amount|floatformat:2 }} руб.
+                    </td>
+                    <td>
+                        {% if perms.contracts.delete_contract %}
+                            <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
+                        {% else %}
+                            <p>У вас нет прав.</p>
+                        {% endif %}
+                    </td>
+                    {% empty %}
+                        <td colspan="3" class="text-center">Пока нет ни одного контракта.</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->

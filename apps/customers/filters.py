@@ -11,7 +11,10 @@ from .models import ActiveClient
 CUSTOMER_ORDERING_CHOICES = (
     ("potential_client__last_name", "Фамилия (А-Я)"),
     ("-potential_client__last_name", "Фамилия (Я-А)"),
-    ("contract__end_date", "Дата окончания контракта"),
+    ("contract__end_date", "Дата окончания контракта (ближайшие)"),
+    ("-contract__end_date", "Дата окончания контракта (дальние)"),
+    ("contract__amount", "Сумма (по возрастанию)"),
+    ("-contract__amount", "Сумма (по убыванию)"),
 )
 
 

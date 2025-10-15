@@ -37,9 +37,10 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
     def get_queryset(self) -> QuerySet[ActiveClient]:
         """
         Переопределяем queryset для оптимизации.
-        select_related подгружает связанные лиды одним запросом, избегая проблемы "N+1".
+        select_related подгружает данные из двух связанных моделей
+        (лида и контракта) одним запросом, избегая проблемы "N+1".
         """
-        return super().get_queryset().select_related("potential_client")
+        return super().get_queryset().select_related("potential_client", "contract__service")
 
 
 class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
