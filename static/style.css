@@ -67,7 +67,7 @@ body {
 }
 
 .user-avatar-default {
-    font-size: 150px;   /* Делает иконку-заглушку большой */
+    font-size: 150px;
     line-height: 1;
     color: #6c757d;    /* Приглушенный серый цвет для иконки */
 }

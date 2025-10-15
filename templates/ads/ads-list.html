@@ -47,19 +47,48 @@
     </div>
 
     <div class="col">
-        <ul class="list-group">
-            {% for ad in ads %}
-            <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'ads:detail' ad.pk %}" class="text-decoration-none link-dark">{{ ad.name }}</a>
-
-                {% if perms.advertisements.delete_adcampaign %}
-                    <a href="{% url 'ads:delete' ad.pk %}" class="btn btn-danger">Удалить</a>
-                {% endif %}
-            </li>
-            {% empty %}
-                <li class="list-group-item">Пока нет ни одной рекламной кампании.</li>
-            {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Услуга</th>
+                    <th>Бюджет</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in ads %}
+                <tr>
+                    <td>
+                        {% if perms.advertisements.view_adcampaign %}
+                            <a href="{% url 'ads:detail' ad.pk %}">{{ ad.name }}</a>
+                        {% else %}
+                            {{ ad.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if perms.products.view_service %}
+                            <a href="{% url 'products:detail' ad.service.pk %}">{{ ad.service.name }}</a>
+                        {% else %}
+                            {{ ad.service.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ ad.budget|floatformat:2 }} руб.
+                    </td>
+                    <td>
+                        {% if perms.advertisements.delete_adcampaign %}
+                            <a href="{% url 'ads:delete' ad.pk %}" class="btn btn-danger">Удалить</a>
+                        {% else %}
+                            <p>У вас нет прав.</p>
+                        {% endif %}
+                    </td>
+                    {% empty %}
+                        <td colspan="3" class="text-center">Пока нет ни одной рекламной кампании.</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
