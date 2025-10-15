@@ -11,21 +11,28 @@ from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django_filters.views import FilterView
 
 from apps.customers.models import ActiveClient
 
+from .filters import AdCampaignFilter
 from .forms import AdCampaignForm
 from .models import AdCampaign
 
 
-class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка рекламных кампаний."""
+class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка рекламных кампаний с фильтрацией."""
 
     model = AdCampaign
     template_name = "ads/ads-list.html"
     # Переименуем переменную контекста, чтобы соответствовать шаблону (ads)
     context_object_name = "ads"
     permission_required = "advertisements.view_adcampaign"
+
+    # Подключаем класс фильтра
+    filterset_class = AdCampaignFilter
+    # Устанавливаем пагинацию
+    paginate_by = 20
 
     def get_queryset(self) -> QuerySet[AdCampaign]:
         """

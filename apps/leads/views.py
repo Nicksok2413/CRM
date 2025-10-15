@@ -7,20 +7,26 @@ from django.db.models import QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django_filters.views import FilterView
 
+from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
 
 
-class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка лидов."""
+class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка лидов с фильтрацией."""
 
     model = PotentialClient
     template_name = "leads/leads-list.html"
     context_object_name = "leads"
-    # Право на просмотр будет и у Оператора, и у Менеджера
     permission_required = "leads.view_potentialclient"
+
+    # Подключаем класс фильтра
+    filterset_class = LeadFilter
+    # Устанавливаем пагинацию
+    paginate_by = 25
 
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """

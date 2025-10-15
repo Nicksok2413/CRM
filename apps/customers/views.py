@@ -27,6 +27,9 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
     context_object_name = "customers"
     permission_required = "customers.view_activeclient"
 
+    # Устанавливаем пагинацию
+    paginate_by = 25
+
     def get_queryset(self) -> QuerySet[ActiveClient]:
         """
         Переопределяем queryset для оптимизации.

@@ -6,19 +6,26 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django_filters.views import FilterView
 
+from .filters import ServiceFilter
 from .forms import ServiceForm
 from .models import Service
 
 
-class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка услуг."""
+class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка услуг с фильтрацией."""
 
     model = Service
     template_name = "products/products-list.html"
     context_object_name = "products"
     permission_required = "products.view_service"
+
+    # Подключаем класс фильтра
+    filterset_class = ServiceFilter
+    # Устанавливаем пагинацию
+    paginate_by = 20
 
 
 class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
