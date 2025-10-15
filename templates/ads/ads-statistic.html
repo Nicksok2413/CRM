@@ -1,5 +1,7 @@
 {% extends "_base.html" %}
 
+{% load pagination_tags %}
+
 {% block content %}
 <h2 class="fw-bold">Статистика рекламных кампаний</h2>
 
@@ -32,6 +34,9 @@
 
         <div class="col-auto">
             <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+
+            <!-- `request.path` - это текущий URL без GET-параметров (/ads/statistic/) -->
+            <a href="{{ request.path }}" class="btn btn-secondary btn-sm">Сбросить</a>
         </div>
     </form>
 </div>
@@ -71,45 +76,7 @@
 
     <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
     {% if is_paginated %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination">
-
-            {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}">
-                        Назад
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#">
-                        Назад
-                    </a>
-                </li>
-            {% endif %}
-
-            <li class="page-item active" aria-current="page">
-                <a class="page-link" href="#">
-                    {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-                </a>
-            </li>
-
-            {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}">
-                        Вперед
-                    </a>
-                </li>
-            {% else %}
-                <li class="page-item disabled">
-                    <a class="page-link" href="#">
-                        Вперед
-                    </a>
-                </li>
-            {% endif %}
-
-        </ul>
-    </nav>
+        {% render_pagination page_obj %} <!-- Вызываем кастомный тег -->
     {% endif %}
     <!-- ======================================================== -->
 
