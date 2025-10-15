@@ -6,13 +6,6 @@
 <!-- ==================== ФОРМА ФИЛЬТРАЦИИ И СОРТИРОВКИ ==================== -->
 <div class="row bg-white px-3 py-3 mx-2 my-3 rounded shadow-sm">
     <form method="get" class="row g-3 align-items-center">
-        <!-- Фильтр по связанной модели -->
-        <div class="col-auto">
-            {{ filter.form.contract__service.label_tag }}
-        </div>
-        <div class="col-auto">
-            {{ filter.form.contract__service }}
-        </div>
         <!-- Фильтр по услуге -->
         <div class="col-auto">
             <label for="{{ filter.form.contract__service.id_for_label }}">Услуга:</label>

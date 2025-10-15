@@ -10,7 +10,7 @@ from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
 from apps.customers.models import ActiveClient
@@ -108,7 +108,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         return HttpResponseRedirect(self.get_success_url())
 
 
-class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
     """
     Представление для отображения статистики по рекламным кампаниям.
     """
@@ -118,6 +118,11 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
     context_object_name = "ads"
     # Согласно ТЗ, все роли могут смотреть статистику
     permission_required = "advertisements.view_adcampaign"
+
+    # Подключаем класс фильтра
+    filterset_class = AdCampaignFilter
+    # Устанавливаем пагинацию
+    paginate_by = 20
 
     def get_queryset(self) -> Any:
         """
