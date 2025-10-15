@@ -37,6 +37,41 @@
         {% endif %}
     </div>
 
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Услуга</th>
+                <th>Стоимость</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>
+                    {% if perms.products.view_service %}
+                        <a href="{% url 'products:detail' product.pk %}">{{ product.name }}</a>
+                    {% else %}
+                        {{ product.name }}
+                    {% endif %}
+                </td>
+                <td>
+                    {{ product.cost|floatformat:2 }} руб.
+                </td>
+                <td>
+                    {% if perms.products.delete_service %}
+                        <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">Удалить</a>
+                    {% else %}
+                        <p>У вас нет прав.</p>
+                    {% endif %}
+                </td>
+                {% empty %}
+                    <td colspan="3" class="text-center">Пока нет ни одной услуги.</td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+
     <div class="col">
         <ul class="list-group">
             {% for product in products %}
