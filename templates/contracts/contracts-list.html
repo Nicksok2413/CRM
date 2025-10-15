@@ -1,7 +1,53 @@
 {% extends "_base.html" %}
 
+{% load pagination_tags %}
+
 {% block content %}
 <h2 class="fw-bold">Контракты</h2>
+
+<!-- ==================== ФОРМА ФИЛЬТРАЦИИ И СОРТИРОВКИ ==================== -->
+<div class="row bg-white px-3 py-3 mx-2 my-3 rounded shadow-sm">
+    <form method="get" class="row g-3 align-items-center">
+        <!-- Фильтр по услуге -->
+        <div class="col-auto">
+            {{ filter.form.service.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.service }}
+        </div>
+
+        <!-- Фильтр по "Дата заключения после" -->
+        <div class="col-auto">
+            {{ filter.form.start_date_after.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.start_date_after }}
+        </div>
+
+        <!-- Фильтр по "Дата окончания до" -->
+        <div class="col-auto">
+            {{ filter.form.end_date_before.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.end_date_before }}
+        </div>
+
+        <!-- Выпадающий список для сортировки -->
+        <div class="row-auto">
+            {{ filter.form.sort.label_tag }}
+            {{ filter.form.sort }}
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+
+            <!-- `request.path` - это текущий URL без GET-параметров (/contracts/) -->
+            <a href="{{ request.path }}" class="btn btn-secondary btn-sm">Сбросить</a>
+        </div>
+    </form>
+</div>
+<!-- ======================================================== -->
+
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
 
     <div class="hstack gap-3 pb-4">
@@ -11,18 +57,63 @@
     </div>
 
     <div class="col">
-        <ul class="list-group">
-            {% for contract in contracts %}
-            <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'contracts:detail' contract.pk %}" class="text-decoration-none link-dark">{{ contract.name }}</a>
-                {% if perms.contracts.delete_contract %}
-                    <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
-                {% endif %}
-            </li>
-            {% empty %}
-                <li class="list-group-item">Пока нет ни одного контракта.</li>
-            {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Услуга</th>
+                    <th>Дата заключения</th>
+                    <th>Дата окончания</th>
+                    <th>Сумма</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contract in contracts %}
+                <tr>
+                    <td>
+                        {% if perms.contracts.view_contract %}
+                            <a href="{% url 'contracts:detail' contract.pk %}">{{ contract.name }}</a>
+                        {% else %}
+                            {{ contract.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if perms.products.view_service %}
+                            <a href="{% url 'products:detail' contract.service.pk %}">{{ contract.service.name }}</a>
+                        {% else %}
+                            {{ contract.service.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ contract.start_date|date:"d-m-Y" }}
+                    </td>
+                    <td>
+                        {{ contract.end_date|date:"d-m-Y" }}
+                    </td>
+                    <td>
+                        {{ contract.amount|floatformat:2 }} руб.
+                    </td>
+                    <td>
+                        {% if perms.contracts.delete_contract %}
+                            <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
+                        {% else %}
+                            <p>У вас нет прав.</p>
+                        {% endif %}
+                    </td>
+                    {% empty %}
+                        <td colspan="3" class="text-center">Пока нет ни одного контракта.</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
+    {% if is_paginated %}
+        {% render_pagination page_obj %} <!-- Вызываем кастомный тег -->
+    {% endif %}
+    <!-- ======================================================== -->
+
 </div>
 {% endblock %}

@@ -5,25 +5,34 @@
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Q, QuerySet, Sum, When
+from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django_filters.views import FilterView
 
-from .forms import AdCampaignForm
+from apps.customers.models import ActiveClient
+
+from .filters import AdCampaignFilter
+from .forms import AdCampaignForm, LeadStatusFilterForm
 from .models import AdCampaign
 
 
-class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка рекламных кампаний."""
+class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка рекламных кампаний с фильтрацией, пагинацией и сортировкой."""
 
     model = AdCampaign
     template_name = "ads/ads-list.html"
     # Переименуем переменную контекста, чтобы соответствовать шаблону (ads)
     context_object_name = "ads"
     permission_required = "advertisements.view_adcampaign"
+
+    # Подключаем класс фильтра
+    filterset_class = AdCampaignFilter
+    # Устанавливаем пагинацию
+    paginate_by = 20
 
     def get_queryset(self) -> QuerySet[AdCampaign]:
         """
@@ -99,7 +108,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         return HttpResponseRedirect(self.get_success_url())
 
 
-class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
     """
     Представление для отображения статистики по рекламным кампаниям.
     """
@@ -110,6 +119,11 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
     # Согласно ТЗ, все роли могут смотреть статистику
     permission_required = "advertisements.view_adcampaign"
 
+    # Подключаем класс фильтра
+    filterset_class = AdCampaignFilter
+    # Устанавливаем пагинацию
+    paginate_by = 20
+
     def get_queryset(self) -> Any:
         """
         Переопределяем queryset для добавления вычисляемых полей (аннотаций).
@@ -119,10 +133,9 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
 
         # 2. Добавляем аннотации
         annotated_queryset = queryset.annotate(
-            # Количество уникальных лидов для каждой кампании
-            leads_count=Count("leads", distinct=True),
-            # Количество активных клиентов.
-            # Мы считаем только те записи `ActiveClient`, которые не были "мягко" удалены.
+            # Количество уникальных лидов для каждой кампании, которые не были "мягко" удалены.
+            leads_count=Count("leads", filter=Q(leads__is_deleted=False), distinct=True),
+            # Количество активных клиентов для каждой кампании, которые не были "мягко" удалены.
             customers_count=Count(
                 "leads__contracts_history", filter=Q(leads__contracts_history__is_deleted=False), distinct=True
             ),
@@ -148,3 +161,59 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, ListV
         )
 
         return annotated_queryset
+
+
+class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    """
+    Представление для детальной статистики по одной рекламной кампании.
+    """
+
+    model = AdCampaign
+    template_name = "ads/ads-detail-statistic.html"  # Новый шаблон
+    context_object_name = "ad"
+    permission_required = "advertisements.view_adcampaign"
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        campaign = self.get_object()
+
+        # Получаем всех лидов этой кампании, предзагружая историю контрактов
+        # И внутри этой предзагрузки также подтягиваем данные самих контрактов.
+        leads = campaign.leads.all().prefetch_related(
+            # Prefetch - для обратной связи (может быть много записей)
+            Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
+        )
+
+        # ============ Логика фильтрации ============
+
+        # Форма фильтрации по статусу
+        status_filter_form = LeadStatusFilterForm(self.request.GET)
+
+        if status_filter_form.is_valid():
+            status = status_filter_form.cleaned_data.get("status")
+
+            if status == "active":
+                leads = [lead for lead in leads if lead.get_current_status()]
+            elif status == "archived":
+                leads = [lead for lead in leads if not lead.get_current_status() and lead.contracts_history.exists()]
+            elif status == "in_work":
+                leads = [lead for lead in leads if not lead.contracts_history.exists()]
+
+        # ==========================================
+
+        # Рассчитываем общую статистику для этой кампании
+        active_clients = [lead.get_current_status() for lead in leads if lead.get_current_status() is not None]
+        total_revenue = sum(ac.contract.amount for ac in active_clients)
+
+        context["leads_list"] = leads  # Передаем отфильтрованный список
+        context["status_filter_form"] = status_filter_form  # Передаем саму форму
+        context["total_leads"] = len(leads)
+        context["total_active_clients"] = len(active_clients)
+        context["total_revenue"] = total_revenue
+
+        if campaign.budget > 0:
+            context["profit"] = (total_revenue / campaign.budget) * 100
+        else:
+            context["profit"] = None
+
+        return context

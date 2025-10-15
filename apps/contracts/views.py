@@ -7,19 +7,26 @@ from django.db.models import QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django_filters.views import FilterView
 
+from .filters import ContractFilter
 from .forms import ContractForm
 from .models import Contract
 
 
-class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка контрактов."""
+class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка контрактов с фильтрацией, пагинацией и сортировкой."""
 
     model = Contract
     template_name = "contracts/contracts-list.html"
     context_object_name = "contracts"
     permission_required = "contracts.view_contract"
+
+    # Подключаем класс фильтра
+    filterset_class = ContractFilter
+    # Устанавливаем пагинацию
+    paginate_by = 25
 
     def get_queryset(self) -> QuerySet[Contract]:
         """

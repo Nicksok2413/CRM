@@ -12,8 +12,8 @@
             <div class="card-body">
                 <h5 class="card-title fw-bold">{{ object.potential_client.last_name }} {{ object.potential_client.first_name }}</h5>
                 <p class="card-text">{{ object.potential_client.phone }}</p>
-                <div class="d-flex justify-content-end fw-bold">{{ object.potential_client.email }}</div>
-                <div class="d-flex justify-content-center fw-bold">
+                <div class="d-flex justify-content-end fw-bold">e-mail: {{ object.potential_client.email }}</div>
+                <div class="d-flex justify-content-center mt-3 fw-bold">
                     {% if perms.customers.change_activeclient %}
                         <a href="{% url 'customers:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
                     {% endif %}

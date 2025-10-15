@@ -43,8 +43,6 @@ class AdCampaignFactory(factory.django.DjangoModelFactory):
         model = AdCampaign
 
     name = factory.LazyFunction(lambda: f"РК {faker.company()}")
-    # Автоматически создаст связанную Услугу с помощью ServiceFactory
-    service = factory.SubFactory(ServiceFactory)
     channel = factory.LazyFunction(lambda: random.choice(["Яндекс.Директ", "Google Ads", "VK", "Facebook"]))
     budget = factory.LazyFunction(lambda: round(random.uniform(50000, 500000), 2))
 
@@ -57,17 +55,13 @@ class PotentialClientFactory(factory.django.DjangoModelFactory):
     last_name = factory.LazyFunction(faker.last_name)
     email = factory.LazyFunction(faker.unique.email)
     phone = factory.LazyFunction(faker.phone_number)
-    # Автоматически создаст связанную Рекламную кампанию
-    ad_campaign = factory.SubFactory(AdCampaignFactory)
 
 
 class ContractFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Contract
 
-    name = factory.LazyAttribute(lambda o: f"Контракт №{random.randint(100, 999)} на {o.service.name}")
-    # Указываем, что услуга будет передана при создании
-    service = factory.SubFactory(ServiceFactory)
+    name = factory.LazyFunction(lambda: f"Контракт №{random.randint(1000, 9999)}")
     amount = factory.LazyFunction(lambda: round(random.uniform(20000, 1000000), 2))
     start_date = factory.LazyFunction(faker.past_date)
     end_date = factory.LazyFunction(faker.future_date)
@@ -76,13 +70,6 @@ class ContractFactory(factory.django.DjangoModelFactory):
 class ActiveClientFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = ActiveClient
-
-    # Связь с лидом будет установлена при создании
-    potential_client = factory.SubFactory(PotentialClientFactory)
-
-    # Создаем контракт, который логически связан с лидом
-    # Услуга в контракте должна быть той же, что и в рекламной кампании лида
-    contract = factory.LazyAttribute(lambda o: ContractFactory(service=o.potential_client.ad_campaign.service))
 
 
 # ======================================================================
@@ -112,17 +99,25 @@ class Command(BaseCommand):
         count = options["count"]
         self.stdout.write(self.style.SUCCESS(f"Начинаем наполнение базы данных. Будет создано по ~{count} записей..."))
 
-        # 1. Создаем услуги и рекламные кампании
+        # Очищаем генератор уникальных значений Faker перед каждым запуском
+        faker.unique.clear()
 
-        self.stdout.write("Создаем услуги и рекламные кампании...")
-
+        # 1. Создаем услуги
+        self.stdout.write("Создаем услуги...")
         # `create_batch` создает указанное количество объектов
-        campaigns = AdCampaignFactory.create_batch(count)
+        services = ServiceFactory.create_batch(count // 2 or 1)  # создаем в два раза меньше услуг
 
-        # 2. Создаем потенциальных клиентов (лидов)
+        # 2. Создаем Рекламные Кампании, привязывая их к Услугам
+        self.stdout.write("Создаем рекламные кампании...")
+        campaigns = []
 
+        for _ in range(count):
+            # Для каждой кампании выбираем случайную услугу
+            service = random.choice(services)
+            campaigns.append(AdCampaignFactory.create(service=service))
+
+        # 3. Создаем потенциальных клиентов (лидов)
         self.stdout.write("Создаем потенциальных клиентов...")
-
         leads = []
 
         for _ in range(count * 3):  # Создадим в 3 раза больше лидов
@@ -130,13 +125,10 @@ class Command(BaseCommand):
             campaign = random.choice(campaigns)
             leads.append(PotentialClientFactory.create(ad_campaign=campaign))
 
-        # 3. Создадим некоторое количество "свободных" контрактов
-
+        # 4. Создадим некоторое количество "свободных" контрактов
         self.stdout.write('Создаем "свободные" контракты...')
-
         # Получим список всех услуг, чтобы создавать контракты для них
         all_services = Service.objects.all()
-
         free_contracts = []
 
         for _ in range(count):
@@ -144,10 +136,8 @@ class Command(BaseCommand):
             service = random.choice(all_services)
             free_contracts.append(ContractFactory.create(service=service))
 
-        # 4. "Активируем" часть клиентов
-
+        # 5. "Активируем" часть клиентов
         self.stdout.write("Создаем активных клиентов и связанные с ними контракты...")
-
         # Перемешиваем список лидов
         random.shuffle(leads)
 
@@ -155,11 +145,14 @@ class Command(BaseCommand):
         num_active_clients = len(leads) // 3
 
         for lead in leads[:num_active_clients]:
-            # Создаем активного клиента, фабрика сама создаст связанный контракт
-            ActiveClientFactory.create(potential_client=lead)
+            # Получаем услугу из кампании, с которой пришел лид
+            service_for_contract = lead.ad_campaign.service
+            # Создаем контракт для этой конкретной услуги
+            contract = ContractFactory.create(service=service_for_contract)
+            # Создаем запись об активном клиенте, связывая лида и контракт
+            ActiveClientFactory.create(potential_client=lead, contract=contract)
 
-        # 5. Создаем архивные контракты для некоторых из уже активных клиентов
-
+        # 6. Создаем архивные контракты для некоторых из уже активных клиентов
         self.stdout.write("Создаем архивные (старые) контракты...")
 
         # Список активных клиентов
@@ -170,8 +163,12 @@ class Command(BaseCommand):
 
         # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту
         for lead in active_leads_with_history[: len(active_leads_with_history) // 5]:
+            # Получаем услугу из кампании, с которой пришел лид
+            service_for_contract = lead.ad_campaign.service
+            # Создаем контракт для этой конкретной услуги
+            contract = ContractFactory.create(service=service_for_contract)
             # Создаем еще одну запись ActiveClient
-            old_active_client_record = ActiveClientFactory.create(potential_client=lead)
+            old_active_client_record = ActiveClientFactory.create(potential_client=lead, contract=contract)
             # И сразу же "мягко" ее удаляем, чтобы она стала архивной
             old_active_client_record.soft_delete()
 

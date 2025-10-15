@@ -1,8 +1,40 @@
 {% extends "_base.html" %}
 
+{% load pagination_tags %}
+
 {% block content %}
 <h2 class="fw-bold">Услуги</h2>
-<div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
+
+<!-- ==================== ФОРМА ФИЛЬТРАЦИИ И СОРТИРОВКИ ==================== -->
+<div class="row bg-white px-3 py-3 mx-2 my-3 rounded shadow-sm">
+    <form method="get" class="row g-3 align-items-center">
+        <!-- Фильтр по части названия или описания -->
+        <div class="col-auto">
+            {{ filter.form.name_or_description.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.name_or_description }}
+        </div>
+
+        <!-- Выпадающий список для сортировки -->
+        <div class="col-auto">
+            {{ filter.form.sort.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.sort }}
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+
+            <!-- `request.path` - это текущий URL без GET-параметров (/products/) -->
+            <a href="{{ request.path }}" class="btn btn-secondary btn-sm">Сбросить</a>
+        </div>
+    </form>
+</div>
+<!-- ======================================================== -->
+
+<div class="row bg-white px-3 py-3 mx-2 my-5 rounded shadow-lg">
 
     <div class="hstack gap-3 pb-4">
         {% if perms.products.create_service %}
@@ -11,19 +43,47 @@
     </div>
 
     <div class="col">
-        <ul class="list-group">
-            {% for product in products %}
-            <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'products:detail' product.pk %}" class="text-decoration-none link-dark">{{ product.name }}</a>
-
-                {% if perms.products.delete_service %}
-                    <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">Удалить</a>
-                {% endif %}
-            </li>
-            {% empty %}
-                <li class="list-group-item">Пока нет ни одной услуги.</li>
-            {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Стоимость</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        {% if perms.products.view_service %}
+                            <a href="{% url 'products:detail' product.pk %}">{{ product.name }}</a>
+                        {% else %}
+                            {{ product.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ product.cost|floatformat:2 }} руб.
+                    </td>
+                    <td>
+                        {% if perms.products.delete_service %}
+                            <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">Удалить</a>
+                        {% else %}
+                            <p>У вас нет прав.</p>
+                        {% endif %}
+                    </td>
+                    {% empty %}
+                        <td colspan="3" class="text-center">Пока нет ни одной услуги.</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
+    {% if is_paginated %}
+        {% render_pagination page_obj %} <!-- Вызываем кастомный тег -->
+    {% endif %}
+    <!-- ======================================================== -->
+
 </div>
 {% endblock %}

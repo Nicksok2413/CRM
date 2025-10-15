@@ -1,23 +1,109 @@
 {% extends "_base.html" %}
 
+{% load pagination_tags %}
+
 {% block content %}
 <h2 class="fw-bold">Активные клиенты</h2>
+
+<!-- ==================== ФОРМА ФИЛЬТРАЦИИ И СОРТИРОВКИ ==================== -->
+<div class="row bg-white px-3 py-3 mx-2 my-3 rounded shadow-sm">
+    <form method="get" class="row g-3 align-items-center">
+        <!-- Фильтр по услуге -->
+        <div class="col-auto">
+            <label for="{{ filter.form.contract__service.id_for_label }}">Услуга:</label>
+        </div>
+        <div class="col-auto">
+            {{ filter.form.contract__service }}
+        </div>
+
+        <!-- Выпадающий список для сортировки -->
+        <div class="col-auto">
+            {{ filter.form.sort.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.sort }}
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+
+            <!-- `request.path` - это текущий URL без GET-параметров (/customers/) -->
+            <a href="{{ request.path }}" class="btn btn-secondary btn-sm">Сбросить</a>
+        </div>
+    </form>
+</div>
+<!-- ======================================================== -->
+
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
 
     <div class="col">
-        <ul class="list-group">
-            {% for customer in customers %}
-            <li class="list-group-item list-group-item-light d-flex justify-content-between">
-                <a href="{% url 'customers:detail' customer.pk %}" class="text-decoration-none link-dark">{{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}</a>
-
-                {% if perms.customers.delete_activeclient %}
-                    <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger">Удалить</a>
-                {% endif %}
-            </li>
-            {% empty %}
-                <li class="list-group-item">Пока нет ни одного активного клиента.</li>
-            {% endfor %}
-        </ul>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Услуга</th>
+                    <th>Контракт</th>
+                    <th>Дата окончания</th>
+                    <th>Сумма</th>
+                    <th>Удаление</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in customers %}
+                <tr>
+                    <td>
+                        {% if perms.customers.view_activeclient %}
+                            <a href="{% url 'customers:detail' customer.pk %}">
+                                {{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}
+                            </a>
+                        {% else %}
+                            {{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if perms.products.view_service %}
+                            <a href="{% url 'products:detail' customer.contract.service.pk %}">
+                                {{ customer.contract.service.name }}
+                            </a>
+                        {% else %}
+                            {{ customer.contract.service.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if perms.contracts.view_contract %}
+                            <a href="{% url 'contracts:detail' customer.contract.pk %}">
+                                {{ customer.contract.name }}
+                            </a>
+                        {% else %}
+                            {{ customer.contract.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ customer.contract.end_date|date:"d-m-Y" }}
+                    </td>
+                    <td>
+                        {{ customer.contract.amount|floatformat:2 }} руб.
+                    </td>
+                    <td>
+                        {% if perms.customers.delete_activeclient %}
+                            <a href="{% url 'customers:delete' customer.pk %}" class="btn btn-danger">Удалить</a>
+                        {% else %}
+                            <p>У вас нет прав.</p>
+                        {% endif %}
+                    </td>
+                    {% empty %}
+                        <td colspan="3" class="text-center">Пока нет ни одного контракта.</td>
+                    {% endfor %}
+                </tr>
+            </tbody>
+        </table>
     </div>
+
+    <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
+    {% if is_paginated %}
+        {% render_pagination page_obj %} <!-- Вызываем кастомный тег -->
+    {% endif %}
+    <!-- ======================================================== -->
+
 </div>
 {% endblock %}

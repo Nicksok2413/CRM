@@ -4,6 +4,7 @@
 
 # Веб-фреймворк
 Django==5.2.7
+django-filter==25.2
 
 # Веб-сервер
 # gunicorn
