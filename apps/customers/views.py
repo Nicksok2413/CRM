@@ -11,22 +11,26 @@ from django.forms.models import BaseModelForm
 from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
+from django_filters.views import FilterView
 
 from apps.leads.models import PotentialClient
 
+from .filters import ActiveClientFilter
 from .forms import ActiveClientCreateForm, ActiveClientUpdateForm
 from .models import ActiveClient
 
 
-class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """Представление для отображения списка всех активных клиентов."""
+class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+    """Представление для отображения списка всех активных клиентов с фильтрацией, пагинацией и сортировкой."""
 
     model = ActiveClient
     template_name = "customers/customers-list.html"
     context_object_name = "customers"
     permission_required = "customers.view_activeclient"
 
+    # Подключаем класс фильтра
+    filterset_class = ActiveClientFilter
     # Устанавливаем пагинацию
     paginate_by = 25
 

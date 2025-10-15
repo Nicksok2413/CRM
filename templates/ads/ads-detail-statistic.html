@@ -17,7 +17,14 @@
 
 <!-- Таблица с лидами -->
 <div class="row bg-white px-3 py-3 mx-2 my-4 rounded shadow-lg">
-    <h4 class="mb-3">Список лидов</h4>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Список лидов</h4>
+        <!-- Форма фильтра -->
+        <form method="get" class="d-flex gap-2 align-items-center">
+            {{ status_filter_form.as_p }}
+            <button type="submit" class="btn btn-primary btn-sm">Фильтр</button>
+        </form>
+    </div>
     <table class="table table-striped">
         <thead>
             <tr>

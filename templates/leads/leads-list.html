@@ -2,6 +2,33 @@
 
 {% block content %}
 <h2 class="fw-bold">Лиды</h2>
+
+<!-- ==================== ФОРМА ФИЛЬТРАЦИИ И СОРТИРОВКИ ==================== -->
+<div class="row bg-white px-3 py-3 mx-2 my-3 rounded shadow-sm">
+    <form method="get" class="row g-3 align-items-center">
+        <!-- Фильтр по кампании -->
+        <div class="col-auto">
+            {{ filter.form.ad_campaign.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.ad_campaign }}
+        </div>
+
+        <!-- Выпадающий список для сортировки -->
+        <div class="col-auto">
+            {{ filter.form.sort.label_tag }}
+        </div>
+        <div class="col-auto">
+            {{ filter.form.sort }}
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+        </div>
+    </form>
+</div>
+<!-- ======================================================== -->
+
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
 
     <div class="hstack gap-3 pb-4">
@@ -52,11 +79,41 @@
                 </div>
             </li>
 
-
             {% empty %}
                 <li class="list-group-item">Пока нет ни одного лида.</li>
             {% endfor %}
         </ul>
     </div>
+
+    <!-- ==================== БЛОК ПАГИНАЦИИ ===================== -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">Назад</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item active" aria-current="page">
+                <a class="page-link" href="#">{{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</a>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">Вперед</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    <!-- ======================================================== -->
+
 </div>
 {% endblock %}

@@ -16,12 +16,12 @@ from django_filters.views import FilterView
 from apps.customers.models import ActiveClient
 
 from .filters import AdCampaignFilter
-from .forms import AdCampaignForm
+from .forms import AdCampaignForm, LeadStatusFilterForm
 from .models import AdCampaign
 
 
 class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
-    """Представление для отображения списка рекламных кампаний с фильтрацией."""
+    """Представление для отображения списка рекламных кампаний с фильтрацией, пагинацией и сортировкой."""
 
     model = AdCampaign
     template_name = "ads/ads-list.html"
@@ -179,12 +179,30 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
             Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
         )
 
+        # ============ Логика фильтрации ============
+
+        # Форма фильтрации по статусу
+        status_filter_form = LeadStatusFilterForm(self.request.GET)
+
+        if status_filter_form.is_valid():
+            status = status_filter_form.cleaned_data.get("status")
+
+            if status == "active":
+                leads = [lead for lead in leads if lead.get_current_status()]
+            elif status == "archived":
+                leads = [lead for lead in leads if not lead.get_current_status() and lead.contracts_history.exists()]
+            elif status == "in_work":
+                leads = [lead for lead in leads if not lead.contracts_history.exists()]
+
+        # ==========================================
+
         # Рассчитываем общую статистику для этой кампании
         active_clients = [lead.get_current_status() for lead in leads if lead.get_current_status() is not None]
         total_revenue = sum(ac.contract.amount for ac in active_clients)
 
-        context["leads_list"] = leads
-        context["total_leads"] = leads.count()
+        context["leads_list"] = leads  # Передаем отфильтрованный список
+        context["status_filter_form"] = status_filter_form  # Передаем саму форму
+        context["total_leads"] = len(leads)
         context["total_active_clients"] = len(active_clients)
         context["total_revenue"] = total_revenue
 

@@ -16,7 +16,7 @@ from .models import Contract
 
 
 class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
-    """Представление для отображения списка контрактов с фильтрацией."""
+    """Представление для отображения списка контрактов с фильтрацией, пагинацией и сортировкой."""
 
     model = Contract
     template_name = "contracts/contracts-list.html"

@@ -15,7 +15,7 @@ from .models import Service
 
 
 class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
-    """Представление для отображения списка услуг с фильтрацией."""
+    """Представление для отображения списка услуг с фильтрацией, пагинацией и сортировкой."""
 
     model = Service
     template_name = "products/products-list.html"

@@ -16,7 +16,7 @@ from .models import PotentialClient
 
 
 class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
-    """Представление для отображения списка лидов с фильтрацией."""
+    """Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой."""
 
     model = PotentialClient
     template_name = "leads/leads-list.html"

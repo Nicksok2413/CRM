@@ -2,13 +2,20 @@
 Фильтры для приложения advertisements.
 """
 
-from django_filters import FilterSet
+from apps.common.filters import BaseOrderingFilter
 
 from .models import AdCampaign
 
 
-class AdCampaignFilter(FilterSet):
+class AdCampaignFilter(BaseOrderingFilter):
     class Meta:
         model = AdCampaign
-        # Фильтр по каналу (выпадающий список) и услуге (выпадающий список)
+        # Фильтры по каналу (выпадающий список) и услуге (выпадающий список)
         fields = ["channel", "service"]
+        # Определяем поля для сортировки
+        _ordering_fields = {
+            "name": "Название (А-Я)",
+            "-name": "Название (Я-А)",
+            "budget": "Бюджет (по возрастанию)",
+            "-budget": "Бюджет (по убыванию)",
+        }
