@@ -13,8 +13,8 @@ class PotentialClientAdmin(admin.ModelAdmin):
     Административный класс для модели PotentialClient.
     """
 
-    # Поля для отображения в списке всех лидах, включая связанную рекламную компанию.
-    list_display = ("last_name", "first_name", "email", "phone", "ad_campaign")
+    # Поля для отображения в списке всех лидов, включая связанную рекламную компанию.
+    list_display = ("last_name", "first_name", "email", "phone", "status", "ad_campaign")
 
     # Оптимизация запросов: при загрузке списка лидов
     # сразу загружаем связанные данные рекламных компаний одним SQL-запросом, избегая проблемы "N+1".
@@ -25,5 +25,6 @@ class PotentialClientAdmin(admin.ModelAdmin):
     search_fields = ("last_name", "first_name", "email", "phone")
 
     # Фильтры.
+    # Фильтр по статусам.
     # Фильтрация по ForeignKey (`ad_campaign`) создаст список всех рекламных компаний для выбора.
-    list_filter = ("ad_campaign",)
+    list_filter = ("status", "ad_campaign")
