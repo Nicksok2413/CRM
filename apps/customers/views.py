@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
@@ -138,6 +138,33 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         initial = super().get_initial()
         initial["potential_client"] = self.lead
         return initial
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        """
+        Передаем дополнительные именованные аргументы в конструктор формы.
+        """
+        # Получаем стандартный набор kwargs от родительского класса
+        kwargs = super().get_form_kwargs()
+
+        # Добавляем в словарь объект `self.lead` под ключом 'lead'.
+        # Именно этот ключ "ловим" в `__init__` формы ActiveClientCreateForm.
+        kwargs["lead"] = self.lead
+        return kwargs
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Вызывается после успешной валидации формы.
+        Меняем статус лида после его конвертации.
+        """
+        # Сначала вызываем родительский метод, который сохранит объект ActiveClient
+        response = super().form_valid(form)
+
+        # Обновляем статус лида (если мы решим добавить поле status)
+        # self.lead.status = "CONVERTED"
+        # self.lead.save()
+
+        # Сообщение об успехе и редирект остаются в get_success_url
+        return response
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
