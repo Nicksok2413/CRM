@@ -20,8 +20,20 @@ if TYPE_CHECKING:
 
 class PotentialClient(BaseModel):
     """
-    Модель для хранения данных о потенциальных клиентах (лидах).
+    Модель для хранения данных о потенциальных клиентах (лидах) с жизненным циклом.
     """
+
+    class Status(models.TextChoices):
+        """
+        Определяет возможные статусы жизненного цикла лида.
+        `TextChoices` автоматически создает удобные для использования атрибуты
+        (например, `PotentialClient.Status.NEW`).
+        """
+
+        NEW = "NEW", "Новый"
+        IN_PROGRESS = "IN_PROGRESS", "В работе"
+        CONVERTED = "CONVERTED", "Конвертирован"
+        LOST = "LOST", "Потерян"
 
     first_name = models.CharField(
         max_length=100,
@@ -42,6 +54,13 @@ class PotentialClient(BaseModel):
         verbose_name="Телефон",
         validators=[validate_international_phone_number],  # Валидатор для телефона
         help_text="Введите номер в любом удобном формате, включая международный.",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,  # Используем определенные статусы
+        default=Status.NEW,  # По умолчанию каждый новый лид - "Новый"
+        verbose_name="Статус",
     )
 
     ad_campaign = models.ForeignKey(
