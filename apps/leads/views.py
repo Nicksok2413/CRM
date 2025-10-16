@@ -44,6 +44,25 @@ class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     template_name = "leads/leads-detail.html"
     permission_required = "leads.view_potentialclient"
 
+    def get_object(self, queryset: QuerySet | None = None) -> PotentialClient:
+        """
+        Переопределяем метод, чтобы изменить статус лида на 'В работе'
+        при первом просмотре его детальной страницы.
+        """
+
+        # Получаем объект стандартным способом
+        lead_object = super().get_object(queryset)
+
+        # Если статус лида все еще "Новый", меняем его на "В работе"
+        if lead_object.status == PotentialClient.Status.NEW:
+            # Обновляем статус лида.
+            lead_object.status = PotentialClient.Status.IN_PROGRESS
+
+            # Сохраняем только измененное поле для эффективности.
+            lead_object.save(update_fields=["status"])
+
+        return lead_object
+
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
         Переопределяем queryset для оптимизации на детальной странице.

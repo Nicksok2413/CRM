@@ -156,12 +156,18 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         Вызывается после успешной валидации формы.
         Меняем статус лида после его конвертации.
         """
-        # Сначала вызываем родительский метод, который сохранит объект ActiveClient
+
+        # Сначала вызываем родительский метод.
+        # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
         response = super().form_valid(form)
 
-        # Обновляем статус лида (если мы решим добавить поле status)
-        # self.lead.status = "CONVERTED"
-        # self.lead.save()
+        # Проверяем, что у лида еще не статус "Конвертирован"
+        if self.lead.status != PotentialClient.Status.CONVERTED:
+            # Обновляем статус лида.
+            self.lead.status = PotentialClient.Status.CONVERTED
+
+            # Сохраняем только измененное поле для эффективности.
+            self.lead.save(update_fields=["status"])
 
         # Сообщение об успехе и редирект остаются в get_success_url
         return response
