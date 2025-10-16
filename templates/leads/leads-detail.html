@@ -14,11 +14,31 @@
                 <p class="card-text">{{ object.phone }}</p>
                 <p style="align: right; color: yellow;">{{ object.status }}</p>
                 <div class="d-flex justify-content-end fw-bold">e-mail: {{ object.email }}</div>
-                <div class="d-flex justify-content-center mt-3 fw-bold">
+
+                <div class="d-flex justify-content-center mt-4 fw-bold">
+
                     {% if perms.leads.change_potentialclient %}
                         <a href="{% url 'leads:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
                     {% endif %}
+
+                    <hr>
+                    <h5 class="text-center mt-4">Изменить статус</h5>
+
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+                        {% if perms.leads.change_potentialclient %}
+                            <form method="post" action="{% url 'leads:update_status' pk=object.pk status='IN_PROGRESS' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm">Взять в работу</button>
+                            </form>
+                            <form method="post" action="{% url 'leads:update_status' pk=object.pk status='LOST' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-secondary btn-sm">Клиент потерян</button>
+                            </form>
+                        {% endif %}
+                    </div>
+
                 </div>
+
                 <div class="d-flex justify-content-center fw-bold" style="padding-top: 10px;">
                     {% if perms.leads.delete_potentialclient %}
                         <a href="{% url 'leads:delete' object.pk %}" class="btn btn-danger">Удалить</a>

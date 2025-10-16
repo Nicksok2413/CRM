@@ -43,73 +43,78 @@
     </div>
 
     <div class="col">
-        <table class="table table-striped">
+        <table class="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Название</th>
+                    <th>Клиент</th>
                     <th>Рекламная кампания</th>
                     <th>Дата добавления</th>
-                    <th>Статус</th>
-                    <th>Удаление</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-center">Действия</th>
                 </tr>
             </thead>
             <tbody>
                 {% for lead in leads %}
-                <tr>
-                    <td>
-                        {% if perms.leads.view_potentialclient %}
-                            <a href="{% url 'leads:detail' lead.pk %}">{{ lead.last_name }} {{ lead.first_name }}</a>
-                        {% else %}
-                            {{ lead.last_name }} {{ lead.first_name }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if perms.advertisements.view_adcampaign %}
-                            <a href="{% url 'ads:detail' lead.ad_campaign.pk %}">{{ lead.ad_campaign.name }}</a>
-                        {% else %}
-                            {{ lead.ad_campaign.name }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ lead.created_at|date:"d-m-Y" }}
-                    </td>
-                    <td>
-                        <!-- Проверяем, может ли пользователь создавать Активных клиентов -->
-                        {% if perms.customers.add_activeclient %}
+                    <tr>
 
-                            <!--
-                            Используем тег with для вызова метода get_current_status
-                            только один раз на каждой итерации цикла. Результат сохраняется
-                            в переменную `current_status`.
-                            -->
-                            {% with current_status=lead.get_current_status %}
+                        <td>
+                            {% if perms.leads.view_potentialclient %}
+                                <a href="{% url 'leads:detail' lead.pk %}">{{ lead.last_name }} {{ lead.first_name }}</a>
+                            {% else %}
+                                {{ lead.last_name }} {{ lead.first_name }}
+                            {% endif %}
+                        </td>
 
-                                <!-- Проверяем, не является ли этот лид уже активным клиентом -->
-                                {% if not current_status %}
-                                    <!-- Если метод get_current_status() вернул None, значит, нет активных контрактов -->
-                                    <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm">
-                                        Активировать
-                                    </a>
+                        <td>
+                            {% if lead.ad_campaign %}
+                                {% if perms.advertisements.view_adcampaign %}
+                                    <a href="{% url 'ads:detail' lead.ad_campaign.pk %}">{{ lead.ad_campaign.name }}</a>
                                 {% else %}
-                                    <!-- Если метод вернул объект ActiveClient, показываем бейдж -->
-                                    <span class="badge bg-success">Активный клиент</span>
+                                    {{ lead.ad_campaign.name }}
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Не указана</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {{ lead.created_at|date:"d-m-Y" }}
+                        </td>
+
+                        <td class="text-center">
+                            {% if lead.status == lead.Status.NEW %}
+                                <span class="badge bg-primary">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == lead.Status.IN_PROGRESS %}
+                                <span class="badge bg-warning text-dark">{{ lead.get_status_display }}</span>
+                            {% elif lead.status == lead.Status.CONVERTED %}
+                                <span class="badge bg-success">Активный клиент</span>
+                            {% elif lead.status == lead.Status.LOST %}
+                                <span class="badge bg-secondary">{{ lead.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="text-center">
+                            <div class="d-flex gap-2 justify-content-center">
+                                <!-- Показываем кнопку "Активировать" только если лид НЕ конвертирован -->
+                                {% if perms.customers.add_activeclient and lead.status != lead.LeadStatus.CONVERTED %}
+                                    <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm" title="Активировать клиента">
+                                        <i class="fas fa-user-check"></i>
+                                    </a>
                                 {% endif %}
 
-                            {% endwith %}
-
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if perms.leads.delete_potentialclient %}
-                            <a href="{% url 'leads:delete' lead.pk %}" class="btn btn-danger">Удалить</a>
-                        {% else %}
-                            <p>У вас нет прав.</p>
-                        {% endif %}
-                    </td>
-                    {% empty %}
-                        <td colspan="3" class="text-center">Пока нет ни одного лида.</td>
-                    {% endfor %}
-                </tr>
+                                {% if perms.leads.delete_potentialclient %}
+                                    <a href="{% url 'leads:delete' lead.pk %}" class="btn btn-danger btn-sm" title="Удалить лида">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Пока нет ни одного лида.</td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
