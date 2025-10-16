@@ -1,12 +1,14 @@
 """
 Представления (Views) для приложения leads.
 """
-
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
@@ -112,6 +114,30 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         объекта после успешного редактирования.
         """
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
+
+
+class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    """
+    Базовый View для смены статуса лида.
+    Принимает рекламную кампанию лида и новый статус из URL.
+    """
+    permission_required = 'leads.change_potentialclient'
+
+    def post(self, request, pk, status):
+        lead = get_object_or_404(PotentialClient, pk=pk)
+
+        # Проверяем, что переданный статус валиден
+        valid_statuses = [status[0] for status in PotentialClient.Status.choices]
+
+        if status in valid_statuses:
+            lead.status = status
+            lead.save(update_fields=['status'])
+            messages.success(request, f'Статус клиента "{lead}" изменен на "{lead.get_status_display()}".')
+        else:
+            messages.error(request, 'Некорректный статус.')
+
+        # Возвращаемся на детальную страницу лида
+        return redirect('leads:detail', pk=lead.pk)
 
 
 class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
