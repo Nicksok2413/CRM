@@ -55,6 +55,9 @@ class PotentialClientFactory(factory.django.DjangoModelFactory):
     last_name = factory.LazyFunction(faker.last_name)
     email = factory.LazyFunction(faker.unique.email)
     phone = factory.LazyFunction(faker.phone_number)
+    status = factory.LazyFunction(
+        lambda: random.choice([PotentialClient.Status.NEW, PotentialClient.Status.IN_PROGRESS])
+    )
 
 
 class ContractFactory(factory.django.DjangoModelFactory):
