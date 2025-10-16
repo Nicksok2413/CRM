@@ -12,6 +12,7 @@
             <div class="card-body">
                 <h5 class="card-title fw-bold">{{ object.last_name }} {{ object.first_name }}</h5>
                 <p class="card-text">{{ object.phone }}</p>
+                <p style="align: right; color: yellow;">{{ object.status }}</p>
                 <div class="d-flex justify-content-end fw-bold">e-mail: {{ object.email }}</div>
                 <div class="d-flex justify-content-center mt-3 fw-bold">
                     {% if perms.leads.change_potentialclient %}
