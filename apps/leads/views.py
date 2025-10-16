@@ -46,25 +46,6 @@ class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     template_name = "leads/leads-detail.html"
     permission_required = "leads.view_potentialclient"
 
-    def get_object(self, queryset: QuerySet | None = None) -> PotentialClient:
-        """
-        Переопределяем метод, чтобы изменить статус лида на 'В работе'
-        при первом просмотре его детальной страницы.
-        """
-
-        # Получаем объект стандартным способом
-        lead_object = super().get_object(queryset)
-
-        # Если статус лида все еще "Новый", меняем его на "В работе"
-        if lead_object.status == PotentialClient.Status.NEW:
-            # Обновляем статус лида.
-            lead_object.status = PotentialClient.Status.IN_PROGRESS
-
-            # Сохраняем только измененное поле для эффективности.
-            lead_object.save(update_fields=["status"])
-
-        return lead_object
-
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
         Переопределяем queryset для оптимизации на детальной странице.
@@ -116,6 +97,24 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
 
 
+class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    """Представление для "мягкого" удаления лида."""
+
+    model = PotentialClient
+    template_name = "leads/leads-delete.html"
+    success_url = reverse_lazy("leads:list")
+    # Право на удаление будет только у Оператора
+    permission_required = "leads.delete_potentialclient"
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
+        """
+        Переопределяем метод form_valid для выполнения "мягкого" удаления.
+        Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+        """
+        self.object.soft_delete()
+        return HttpResponseRedirect(self.get_success_url())
+
+
 class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
     """
     Базовый View для смены статуса лида.
@@ -138,21 +137,3 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         # Возвращаемся на детальную страницу лида
         return redirect('leads:detail', pk=lead.pk)
-
-
-class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
-    """Представление для "мягкого" удаления лида."""
-
-    model = PotentialClient
-    template_name = "leads/leads-delete.html"
-    success_url = reverse_lazy("leads:list")
-    # Право на удаление будет только у Оператора
-    permission_required = "leads.delete_potentialclient"
-
-    def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
-        """
-        Переопределяем метод form_valid для выполнения "мягкого" удаления.
-        Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
-        """
-        self.object.soft_delete()
-        return HttpResponseRedirect(self.get_success_url())

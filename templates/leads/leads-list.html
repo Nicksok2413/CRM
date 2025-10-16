@@ -95,11 +95,28 @@
 
                         <td class="text-center">
                             <div class="d-flex gap-2 justify-content-center">
-                                <!-- Показываем кнопку "Активировать" только если лид НЕ конвертирован -->
-                                {% if perms.customers.add_activeclient and lead.status != lead.LeadStatus.CONVERTED %}
-                                    <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm" title="Активировать клиента">
-                                        <i class="fas fa-user-check"></i>
-                                    </a>
+
+                                {% if perms.customers.add_activeclient %}
+
+                                    {% if lead.status == lead.Status.NEW or lead.status == lead.Status.IN_PROGRESS %}
+                                        <!-- Статусы "Новый" или "В работе": показываем кнопку активации -->
+                                        <a href="{% url 'customers:create_from_lead' lead.pk %}" class="btn btn-info btn-sm" title="Активировать клиента">
+                                            <i class="fas fa-user-check"></i>
+                                        </a>
+
+                                    {% elif lead.status == lead.Status.CONVERTED %}
+                                        <!-- Статус "Конвертирован": показываем зеленую иконку-индикатор -->
+                                        <span class="btn btn-success btn-sm disabled" title="Клиент уже активен">
+                                            <i class="fas fa-check-circle"></i>
+                                        </span>
+
+                                    {% elif lead.status == lead.Status.LOST %}
+                                        <!-- Статус "Потерян": показываем серую иконку-индикатор -->
+                                        <span class="btn btn-secondary btn-sm disabled" title="Клиент потерян">
+                                            <i class="fas fa-times-circle"></i>
+                                        </span>
+                                    {% endif %}
+
                                 {% endif %}
 
                                 {% if perms.leads.delete_potentialclient %}
