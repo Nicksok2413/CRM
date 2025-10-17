@@ -54,6 +54,9 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# === Logging ===
+logs/
+
 # === mypy ===
 .mypy_cache/
 .dmypy.json
@@ -62,9 +65,7 @@ dmypy.json
 # === Project Specific ===
 # Django
 media/
-# Временные директории для тестов
-/temp_media/
-/temp_logs/
+
 
 # === Security certificates ===
 *.key
