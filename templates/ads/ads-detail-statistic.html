@@ -6,7 +6,9 @@
 <!-- Блок с KPI -->
 <div class="row bg-white px-3 py-3 mx-2 my-2 rounded shadow-sm">
     <div class="hstack gap-3 pb-4">
-        <a href="{% url 'ads:statistic' %}" class="btn btn-success p-2">К статистике всех рекламных кампаний</a>
+        <a href="{% url 'ads:statistic' %}" class="btn btn-success p-2">
+            <i class="fas fa-arrow-left"></i> К общей статистике
+        </a>
     </div>
     <div class="col-md-3"><strong>Бюджет:</strong> {{ ad.budget|floatformat:2 }} руб.</div>
     <div class="col-md-3"><strong>Общий доход:</strong> {{ total_revenue|floatformat:2 }} руб.</div>
@@ -24,22 +26,24 @@
         <form method="get" class="d-flex gap-2 align-items-center">
             {{ status_filter_form.as_p }}
             <button type="submit" class="btn btn-primary btn-sm">Фильтр</button>
+            <a href="{{ request.path }}" class="btn btn-secondary btn-sm">Сбросить</a>
         </form>
 
     </div>
 
-    <table class="table table-striped">
+    <table class="table table-striped align-middle">
         <thead>
             <tr>
                 <th>ФИО</th>
                 <th>Email</th>
-                <th>Статус</th>
-                <th>Сумма контракта</th>
+                <th class="text-center">Статус контракта</th>
+                <th class="text-end">Сумма контракта</th>
             </tr>
         </thead>
         <tbody>
             {% for lead in leads_list %}
             <tr>
+                <!-- ФИО -->
                 <td>
                     {% if perms.leads.view_potentialclient %}
                         <a href="{% url 'leads:detail' lead.pk %}">{{ lead }}</a>
@@ -47,26 +51,28 @@
                         {{ lead }}
                     {% endif %}
                 </td>
+
+                <!-- Email -->
                 <td>{{ lead.email }}</td>
-                <td>
-                    {% with current_status=lead.get_current_status %}
-                        {% if current_status %}
-                            <span class="badge bg-success">Активный</span>
-                        {% elif lead.contracts_history.exists %}
-                            <span class="badge bg-secondary">Архивный</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">В работе</span>
-                        {% endif %}
-                    {% endwith %}
+
+                <!-- Статус контракта -->
+                <td class="text-center">
+                    {% if lead.active_contract %}
+                        <span class="badge bg-success">Активный</span>
+                    {% elif lead.contracts_history.exists %}
+                        <span class="badge bg-secondary">Архивный</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">В работе</span>
+                    {% endif %}
                 </td>
-                <td>
-                    {% with current_status=lead.get_current_status %}
-                        {% if current_status %}
-                            {{ current_status.contract.amount|floatformat:2 }} руб.
-                        {% else %}
-                            -
-                        {% endif %}
-                    {% endwith %}
+
+                <!-- Сумма контракта -->
+                <td class="text-end">
+                    {% if lead.active_contract %}
+                        {{ lead.active_contract.contract.amount|floatformat:2 }} руб.
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
             </tr>
             {% empty %}
