@@ -77,10 +77,13 @@ class PotentialClient(BaseModel):
     # менеджер `contracts_history`, который возвращает QuerySet объектов `ActiveClient`.
     contracts_history: models.Manager["ActiveClient"]
 
-    def get_current_status(self) -> "ActiveClient | None":
+    @property
+    def active_contract(self) -> "ActiveClient | None":
         """
-        Возвращает текущую запись об активности клиента.
-        Ищет в истории контрактов запись, которая не помечена как удаленная.
+        Возвращает текущую запись об активном контракте клиента (объект ActiveClient).
+
+        Это свойство ищет в истории контрактов запись, которая не была "мягко удалена".
+        Возвращает `None`, если активного контракта нет.
         """
         return self.contracts_history.filter(is_deleted=False).first()
 

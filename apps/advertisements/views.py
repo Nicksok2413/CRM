@@ -193,16 +193,16 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
             status = status_filter_form.cleaned_data.get("status")
 
             if status == "active":
-                leads = [lead for lead in leads if lead.get_current_status()]
+                leads = [lead for lead in leads if lead.active_contract]
             elif status == "archived":
-                leads = [lead for lead in leads if not lead.get_current_status() and lead.contracts_history.exists()]
+                leads = [lead for lead in leads if not lead.active_contract and lead.contracts_history.exists()]
             elif status == "in_work":
                 leads = [lead for lead in leads if not lead.contracts_history.exists()]
 
         # ==========================================
 
         # Рассчитываем общую статистику для этой кампании
-        active_clients = [lead.get_current_status() for lead in leads if lead.get_current_status() is not None]
+        active_clients = [lead.active_contract for lead in leads if lead.active_contract is not None]
         total_revenue = sum(ac.contract.amount for ac in active_clients)
 
         context["leads_list"] = leads  # Передаем отфильтрованный список

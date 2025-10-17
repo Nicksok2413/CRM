@@ -122,20 +122,14 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         # Получаем объект лида или возвращаем ошибку 404, если лид не найден
         self.lead = get_object_or_404(PotentialClient, pk=lead_pk)
 
-        # # Проверяем, не является ли лид уже активным клиентом.
-        # # Если да - перенаправляем обратно с сообщением об ошибке.
-        # if self.lead.get_current_status():
-        #     messages.error(request, f'Клиент "{self.lead}" уже является активным.')
-        #     return HttpResponseRedirect(reverse("leads:list"))  # Возвращаемся в список лидов
-
-        # ================== НОВАЯ, ПРАВИЛЬНАЯ ПРОВЕРКА ==================
+        # Проверяем, не является ли лид уже активным клиентом.
+        # Если да - перенаправляем обратно с сообщением об ошибке.
         # Запрещаем активацию, только если статус лида уже "Конвертирован".
         # Это позволяет повторно активировать "потерянных" клиентов
         # или тех, у кого закончился старый контракт.
         if self.lead.status == PotentialClient.Status.CONVERTED:
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
-            return HttpResponseRedirect(reverse("leads:list"))
-        # =============================================================
+            return HttpResponseRedirect(reverse("leads:list"))  # Возвращаемся в список лидов
 
         return super().dispatch(request, *args, **kwargs)
 
