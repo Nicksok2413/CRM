@@ -194,6 +194,92 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "uploads"
 
 # ======================================================================
+# НАСТРОЙКИ ЛОГИРОВАНИЯ
+# https://docs.djangoproject.com/en/5.2/topics/logging/
+# ======================================================================
+
+LOGFILE_NAME = BASE_DIR / "logs/info.log"
+LOGFILE_ERROR_NAME = BASE_DIR / "logs/error.log"
+LOGFILE_SIZE = 5 * 1024 * 1024  # 5 Mb
+LOGFILE_COUNT = 5
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    # Форматеры
+    "formatters": {
+        # Форматер для вывода в консоль во время разработки.
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
+        },
+        # Простой форматер для продакшен-файлов.
+        "simple": {
+            "format": "[%(asctime)s] %(levelname)s: %(message)s",
+        },
+        # Специальный форматер для логов запросов Django.
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
+        },
+    },
+    # Обработчики
+    "handlers": {
+        # Обработчик для вывода логов в консоль (стандартный поток ошибок).
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        # Обработчик для записи всех логов уровня INFO и выше в один файл.
+        "file_info": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGFILE_NAME,
+            "maxBytes": LOGFILE_SIZE,
+            "backupCount": LOGFILE_COUNT,
+            "formatter": "simple",
+        },
+        # Обработчик для записи только ошибок (ERROR и CRITICAL) в отдельный файл.
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGFILE_ERROR_NAME,
+            "maxBytes": LOGFILE_SIZE,
+            "backupCount": LOGFILE_COUNT,
+            "formatter": "simple",
+        },
+        # Обработчик для логов сервера разработки Django.
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+    },
+    # Логгеры
+    "loggers": {
+        # Логгер для самого Django.
+        "django": {
+            "handlers": ["console", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Логгер для веб-сервера Django (только в консоль).
+        "django.server": {
+            "handlers": ["django.server"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Логгер для приложений (apps).
+        "apps": {
+            "handlers": ["console", "file_info", "file_error"],
+            "level": "DEBUG",  # В режиме DEBUG ловим все сообщения
+            "propagate": False,
+        },
+    },
+}
+
+# ======================================================================
 
 
 # Default primary key field type
