@@ -119,10 +119,12 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         """
         try:
             # Проверяем историю контрактов лида.
-            if self.object.contracts_history.all_objects.exists():
+            history = self.object.contracts_history.all_objects.all()
+
+            if history.exists():
                 raise ProtectedError(
                     "Невозможно удалить лида: у него есть история контрактов.",
-                    self.object.contracts_history.all_objects.all(),
+                    set(history),
                 )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.

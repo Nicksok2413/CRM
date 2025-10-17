@@ -3,6 +3,7 @@
 """
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator
@@ -12,6 +13,11 @@ from apps.common.models import BaseModel
 from apps.common.utils import create_dynamic_upload_path
 from apps.common.validators import validate_document_size
 from apps.products.models import Service
+
+# Этот блок импортируется только во время статической проверки типов.
+# Он предотвращает ошибки циклического импорта во время выполнения.
+if TYPE_CHECKING:
+    from apps.customers.models import ActiveClient
 
 
 class Contract(BaseModel):
@@ -46,6 +52,12 @@ class Contract(BaseModel):
     )
     start_date = models.DateField(verbose_name="Дата заключения")
     end_date = models.DateField(verbose_name="Дата окончания")
+
+    # Явная аннотация для обратной связи.
+    # PyCharm и mypy теперь знают, что у `Contract` есть
+    # аттрибут `active_client`, который возвращает объект `ActiveClient`.
+    # Так как связь OneToOne может отсутствовать, то может возвращать None.
+    active_client: "ActiveClient | None"
 
     def clean(self) -> None:
         """

@@ -8,6 +8,8 @@ from django.db.models import ProtectedError
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
+from apps.leads.models import PotentialClient
+
 from .models import AdCampaign
 
 
@@ -29,7 +31,7 @@ def prevent_hard_delete_adcampaign_with_leads(sender: type[AdCampaign], instance
     """
     # Даже если лид был "мягко удален", он все равно является частью истории
     # и статистики, поэтому мы проверяем через `all_objects`.
-    if instance.leads.all_objects.exists():
-        raise ProtectedError(
-            "Невозможно удалить рекламную кампанию: от нее были получены лиды.", instance.leads.all_objects.all()
-        )
+    protected_leads = PotentialClient.all_objects.filter(ad_campaign=instance)
+
+    if protected_leads.exists():
+        raise ProtectedError("Невозможно удалить рекламную кампанию: от нее были получены лиды.", set(protected_leads))

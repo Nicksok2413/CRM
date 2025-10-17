@@ -8,6 +8,8 @@ from django.db.models import ProtectedError
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
+from apps.customers.models import ActiveClient
+
 from .models import PotentialClient
 
 
@@ -30,7 +32,7 @@ def prevent_hard_delete_lead_with_history(
         ProtectedError: Если найдены связанные объекты, прерывая удаление.
     """
     # Проверяем через `all_objects`, так как даже архивные контракты важны.
-    if instance.contracts_history.all_objects.exists():
-        raise ProtectedError(
-            "Невозможно удалить лида: у него есть история контрактов.", instance.contracts_history.all_objects.all()
-        )
+    history = ActiveClient.all_objects.filter(potential_client=instance)
+
+    if history.exists():
+        raise ProtectedError("Невозможно удалить лида: у него есть история контрактов.", set(history))

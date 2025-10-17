@@ -98,7 +98,9 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
             # Если queryset не пустой, значит, связанные объекты существуют.
             if active_campaigns.exists():
-                raise ProtectedError("Невозможно удалить услугу, есть связанные активные кампании.", active_campaigns)
+                raise ProtectedError(
+                    "Невозможно удалить услугу, есть связанные активные кампании.", set(active_campaigns)
+                )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()

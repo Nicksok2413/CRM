@@ -3,12 +3,18 @@
 """
 
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from django.core.validators import MinValueValidator
 from django.db import models
 
 from apps.common.models import BaseModel
 from apps.products.models import Service
+
+# Этот блок импортируется только во время статической проверки типов.
+# Он предотвращает ошибки циклического импорта во время выполнения.
+if TYPE_CHECKING:
+    from apps.leads.models import PotentialClient
 
 
 class AdCampaign(BaseModel):
@@ -30,6 +36,11 @@ class AdCampaign(BaseModel):
         verbose_name="Бюджет",
         validators=[MinValueValidator(Decimal("0.00"))],  # Бюджет не может быть отрицательным
     )
+
+    # Явная аннотация для обратной связи.
+    # PyCharm и mypy теперь знают, что у `AdCampaign` есть
+    # менеджер `leads`, который возвращает QuerySet объектов `PotentialClient`.
+    leads: models.Manager["PotentialClient"]
 
     def __str__(self) -> str:
         return self.name

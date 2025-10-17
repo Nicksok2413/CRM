@@ -124,10 +124,10 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         """
         try:
             # Ищем всех лидов, полученных от этой рекламной кампании.
-            if self.object.leads.all_objects.exists():
-                raise ProtectedError(
-                    "Невозможно удалить кампанию, от нее были получены лиды.", self.object.leads.all_objects.all()
-                )
+            protected_leads = self.object.leads.all_objects.all()
+
+            if protected_leads.exists():
+                raise ProtectedError("Невозможно удалить кампанию, от нее были получены лиды.", set(protected_leads))
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()

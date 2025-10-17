@@ -105,8 +105,12 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
             ProtectedError: Если найдены связанные объекты, прерывая удаление.
         """
         try:
-            # Проверяем не связан ли контракт с клиентом.
-            if hasattr(self.object, "active_client") and self.object.active_client is not None:
+            # Проверяем не связан ли контракт с клиентом и что клиент не "мягко удален".
+            if (
+                hasattr(self.object, "active_client")
+                and self.object.active_client is not None
+                and not self.object.active_client.is_deleted
+            ):
                 raise ProtectedError(
                     "Невозможно удалить контракт: он привязан к истории клиента.", {self.object.active_client}
                 )
