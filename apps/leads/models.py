@@ -58,6 +58,7 @@ class PotentialClient(BaseModel):
 
     status = models.CharField(
         max_length=20,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         choices=Status.choices,  # Используем определенные статусы
         default=Status.NEW,  # По умолчанию каждый новый лид - "Новый"
         verbose_name="Статус",
