@@ -4,8 +4,21 @@
 
 from typing import Any
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When
+from django.db.models import (
+    Case,
+    Count,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Prefetch,
+    ProtectedError,
+    Q,
+    QuerySet,
+    Sum,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
@@ -102,10 +115,30 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
+
+        Проверяем на защищенные связанные объекты перед "мягким" удалением.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+
+        Raises:
+            ProtectedError: Если найдены связанные объекты, прерывая удаление.
         """
-        self.object.soft_delete()
-        return HttpResponseRedirect(self.get_success_url())
+        try:
+            # Ищем всех лидов, полученных от этой рекламной кампании.
+            protected_leads = self.object.leads.all_objects.all()
+
+            if protected_leads.exists():
+                raise ProtectedError("Невозможно удалить кампанию, от нее были получены лиды.", set(protected_leads))
+
+            # Если проверка пройдена, выполняем "мягкое" удаление.
+            self.object.soft_delete()
+            messages.success(self.request, f'Рекламная кампания "{self.object}" успешно перемещена в архив.')
+            return HttpResponseRedirect(self.get_success_url())
+
+        except ProtectedError:
+            # Если поймали ошибку, показываем пользователю сообщение.
+            messages.error(self.request, "Эту кампанию нельзя удалить, так как от нее были получены лиды.")
+            # Возвращаем пользователя на детальную страницу.
+            return HttpResponseRedirect(reverse("ads:detail", kwargs={"pk": self.object.pk}))
 
 
 class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -193,16 +226,16 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
             status = status_filter_form.cleaned_data.get("status")
 
             if status == "active":
-                leads = [lead for lead in leads if lead.get_current_status()]
+                leads = [lead for lead in leads if lead.active_contract]
             elif status == "archived":
-                leads = [lead for lead in leads if not lead.get_current_status() and lead.contracts_history.exists()]
+                leads = [lead for lead in leads if not lead.active_contract and lead.contracts_history.exists()]
             elif status == "in_work":
                 leads = [lead for lead in leads if not lead.contracts_history.exists()]
 
         # ==========================================
 
         # Рассчитываем общую статистику для этой кампании
-        active_clients = [lead.get_current_status() for lead in leads if lead.get_current_status() is not None]
+        active_clients = [lead.active_contract for lead in leads if lead.active_contract is not None]
         total_revenue = sum(ac.contract.amount for ac in active_clients)
 
         context["leads_list"] = leads  # Передаем отфильтрованный список

@@ -8,6 +8,7 @@ from django import forms
 from django.db.models import Q
 
 from apps.contracts.models import Contract
+from apps.leads.models import PotentialClient
 
 from .models import ActiveClient
 
@@ -19,21 +20,39 @@ class ActiveClientCreateForm(forms.ModelForm):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
-        Переопределяем конструктор для кастомизации поля 'contract'.
+        Переопределяем конструктор, чтобы:
+        1. Принять объект `lead` из View.
+        2. Отфильтровать `queryset` для поля 'contract' на основе услуги лида.
         """
+        # Извлекаем кастомный аргумент 'lead' из kwargs.
+        # Если его нет, `pop` вернет None.
+        lead: PotentialClient | None = kwargs.pop("lead", None)
+
+        # Вызываем родительский конструктор с оставшимися kwargs
         super().__init__(*args, **kwargs)
 
-        # Получаем поле, с которым будем работать
-        contract_field = self.fields["contract"]
+        # Получаем поле 'contract'
+        contract_field = self.fields.get("contract")
 
-        # Проверяем, что это поле выбора модели (для безопасности и подсказки mypy)
+        # Проверяем, что поле существует и является нужным типом
         if isinstance(contract_field, forms.ModelChoiceField):
-            # Теперь mypy знает, что у contract_field есть атрибут queryset
+            # По умолчанию queryset пустой, чтобы избежать показа лишних данных, если что-то пошло не так
+            contract_field.queryset = Contract.objects.none()
 
-            # Фильтруем queryset.
-            # Показываем только те контракты, которые еще не связаны
-            # ни с одним активным клиентом (`active_client__isnull=True`).
-            contract_field.queryset = Contract.objects.filter(active_client__isnull=True)
+            # Если нам передали объект лида из View...
+            if lead and lead.ad_campaign:
+                # Получаем услугу, в которой был заинтересован лид
+                service_needed = lead.ad_campaign.service
+
+                # Фильтруем queryset, чтобы показать только подходящие контракты:
+                # 1. "Свободные" (не привязанные к другому активному клиенту).
+                # 2. Относящиеся к нужной нам услуге.
+                contract_field.queryset = Contract.objects.filter(active_client__isnull=True, service=service_needed)
+
+                # Делаем поле пустым, если нет доступных контрактов
+                if not contract_field.queryset.exists():
+                    contract_field.empty_label = "Нет доступных контрактов для этой услуги"
+                    contract_field.disabled = True
 
     class Meta:
         model = ActiveClient

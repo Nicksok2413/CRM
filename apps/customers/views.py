@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpRequest, HttpResponseBase, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseBase, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
@@ -124,7 +124,10 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
         # Проверяем, не является ли лид уже активным клиентом.
         # Если да - перенаправляем обратно с сообщением об ошибке.
-        if self.lead.get_current_status():
+        # Запрещаем активацию, только если статус лида уже "Конвертирован".
+        # Это позволяет повторно активировать "потерянных" клиентов
+        # или тех, у кого закончился старый контракт.
+        if self.lead.status == PotentialClient.Status.CONVERTED:
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
             return HttpResponseRedirect(reverse("leads:list"))  # Возвращаемся в список лидов
 
@@ -138,6 +141,39 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         initial = super().get_initial()
         initial["potential_client"] = self.lead
         return initial
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        """
+        Передаем дополнительные именованные аргументы в конструктор формы.
+        """
+        # Получаем стандартный набор kwargs от родительского класса
+        kwargs = super().get_form_kwargs()
+
+        # Добавляем в словарь объект `self.lead` под ключом 'lead'.
+        # Именно этот ключ "ловим" в `__init__` формы ActiveClientCreateForm.
+        kwargs["lead"] = self.lead
+        return kwargs
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Вызывается после успешной валидации формы.
+        Меняем статус лида после его конвертации.
+        """
+
+        # Сначала вызываем родительский метод.
+        # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
+        response = super().form_valid(form)
+
+        # Проверяем, что у лида еще не статус "Конвертирован"
+        if self.lead.status != PotentialClient.Status.CONVERTED:
+            # Обновляем статус лида.
+            self.lead.status = PotentialClient.Status.CONVERTED
+
+            # Сохраняем только измененное поле для эффективности.
+            self.lead.save(update_fields=["status"])
+
+        # Сообщение об успехе и редирект остаются в get_success_url
+        return response
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """

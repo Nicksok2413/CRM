@@ -20,8 +20,20 @@ if TYPE_CHECKING:
 
 class PotentialClient(BaseModel):
     """
-    Модель для хранения данных о потенциальных клиентах (лидах).
+    Модель для хранения данных о потенциальных клиентах (лидах) с жизненным циклом.
     """
+
+    class Status(models.TextChoices):
+        """
+        Определяет возможные статусы жизненного цикла лида.
+        `TextChoices` автоматически создает удобные для использования атрибуты
+        (например, `PotentialClient.Status.NEW`).
+        """
+
+        NEW = "NEW", "Новый"
+        IN_PROGRESS = "IN_PROGRESS", "В работе"
+        CONVERTED = "CONVERTED", "Конвертирован"
+        LOST = "LOST", "Потерян"
 
     first_name = models.CharField(
         max_length=100,
@@ -44,6 +56,13 @@ class PotentialClient(BaseModel):
         help_text="Введите номер в любом удобном формате, включая международный.",
     )
 
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,  # Используем определенные статусы
+        default=Status.NEW,  # По умолчанию каждый новый лид - "Новый"
+        verbose_name="Статус",
+    )
+
     ad_campaign = models.ForeignKey(
         AdCampaign,
         on_delete=models.SET_NULL,  # Если кампания удалена, мы не хотим терять лида
@@ -58,10 +77,13 @@ class PotentialClient(BaseModel):
     # менеджер `contracts_history`, который возвращает QuerySet объектов `ActiveClient`.
     contracts_history: models.Manager["ActiveClient"]
 
-    def get_current_status(self) -> "ActiveClient | None":
+    @property
+    def active_contract(self) -> "ActiveClient | None":
         """
-        Возвращает текущую запись об активности клиента.
-        Ищет в истории контрактов запись, которая не помечена как удаленная.
+        Возвращает текущую запись об активном контракте клиента (объект ActiveClient).
+
+        Это свойство ищет в истории контрактов запись, которая не была "мягко удалена".
+        Возвращает `None`, если активного контракта нет.
         """
         return self.contracts_history.filter(is_deleted=False).first()
 

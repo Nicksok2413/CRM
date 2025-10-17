@@ -6,6 +6,7 @@ from .views import (
     LeadDetailView,
     LeadListView,
     LeadUpdateView,
+    UpdateLeadStatusView,
 )
 
 # Пространство имен для URL-адресов этого приложения
@@ -18,4 +19,6 @@ urlpatterns = [
     path("<int:pk>/", LeadDetailView.as_view(), name="detail"),
     path("<int:pk>/delete/", LeadDeleteView.as_view(), name="delete"),
     path("<int:pk>/edit/", LeadUpdateView.as_view(), name="edit"),
+    # URL для обновления статуса лида
+    path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
 ]

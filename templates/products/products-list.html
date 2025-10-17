@@ -43,7 +43,7 @@
     </div>
 
     <div class="col">
-        <table class="table table-striped">
+        <table class="table table-striped align-middle">
             <thead>
                 <tr>
                     <th>Название</th>
@@ -53,28 +53,30 @@
             </thead>
             <tbody>
                 {% for product in products %}
-                <tr>
-                    <td>
-                        {% if perms.products.view_service %}
-                            <a href="{% url 'products:detail' product.pk %}">{{ product.name }}</a>
-                        {% else %}
-                            {{ product.name }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ product.cost|floatformat:2 }} руб.
-                    </td>
-                    <td>
-                        {% if perms.products.delete_service %}
-                            <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">Удалить</a>
-                        {% else %}
-                            <p>У вас нет прав.</p>
-                        {% endif %}
-                    </td>
-                    {% empty %}
+                    <tr>
+                        <td>
+                            {% if perms.products.view_service %}
+                                <a href="{% url 'products:detail' product.pk %}">{{ product.name }}</a>
+                            {% else %}
+                                {{ product.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ product.cost|floatformat:2 }} руб.
+                        </td>
+                        <td>
+                            {% if perms.products.delete_service %}
+                                <a href="{% url 'products:delete' product.pk %}" class="btn btn-danger">Удалить</a>
+                            {% else %}
+                                <p>У вас нет прав.</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
                         <td colspan="3" class="text-center">Пока нет ни одной услуги.</td>
-                    {% endfor %}
-                </tr>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

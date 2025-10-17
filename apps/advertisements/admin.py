@@ -25,5 +25,6 @@ class AdCampaignAdmin(admin.ModelAdmin):
     search_fields = ("name", "channel")
 
     # Фильтры.
+    # Фильтр по каналам продвижения.
     # Фильтрация по ForeignKey (`service`) создаст список всех услуг для выбора.
     list_filter = ("channel", "service")

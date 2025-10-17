@@ -57,7 +57,7 @@
     </div>
 
     <div class="col">
-        <table class="table table-striped">
+        <table class="table table-striped align-middle">
             <thead>
                 <tr>
                     <th>Название</th>
@@ -70,41 +70,43 @@
             </thead>
             <tbody>
                 {% for contract in contracts %}
-                <tr>
-                    <td>
-                        {% if perms.contracts.view_contract %}
-                            <a href="{% url 'contracts:detail' contract.pk %}">{{ contract.name }}</a>
-                        {% else %}
-                            {{ contract.name }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if perms.products.view_service %}
-                            <a href="{% url 'products:detail' contract.service.pk %}">{{ contract.service.name }}</a>
-                        {% else %}
-                            {{ contract.service.name }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {{ contract.start_date|date:"d-m-Y" }}
-                    </td>
-                    <td>
-                        {{ contract.end_date|date:"d-m-Y" }}
-                    </td>
-                    <td>
-                        {{ contract.amount|floatformat:2 }} руб.
-                    </td>
-                    <td>
-                        {% if perms.contracts.delete_contract %}
-                            <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
-                        {% else %}
-                            <p>У вас нет прав.</p>
-                        {% endif %}
-                    </td>
-                    {% empty %}
+                    <tr>
+                        <td>
+                            {% if perms.contracts.view_contract %}
+                                <a href="{% url 'contracts:detail' contract.pk %}">{{ contract.name }}</a>
+                            {% else %}
+                                {{ contract.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if perms.products.view_service %}
+                                <a href="{% url 'products:detail' contract.service.pk %}">{{ contract.service.name }}</a>
+                            {% else %}
+                                {{ contract.service.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ contract.start_date|date:"d-m-Y" }}
+                        </td>
+                        <td>
+                            {{ contract.end_date|date:"d-m-Y" }}
+                        </td>
+                        <td>
+                            {{ contract.amount|floatformat:2 }} руб.
+                        </td>
+                        <td>
+                            {% if perms.contracts.delete_contract %}
+                                <a href="{% url 'contracts:delete' contract.pk %}" class="btn btn-danger">Удалить</a>
+                            {% else %}
+                                <p>У вас нет прав.</p>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
                         <td colspan="3" class="text-center">Пока нет ни одного контракта.</td>
-                    {% endfor %}
-                </tr>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
