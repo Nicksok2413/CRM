@@ -31,6 +31,5 @@ def prevent_hard_delete_adcampaign_with_leads(sender: type[AdCampaign], instance
     # и статистики, поэтому мы проверяем через `all_objects`.
     if instance.leads.all_objects.exists():
         raise ProtectedError(
-            "Невозможно удалить рекламную кампанию: от нее были получены лиды.",
-            instance.leads.all_objects.all()
+            "Невозможно удалить рекламную кампанию: от нее были получены лиды.", instance.leads.all_objects.all()
         )

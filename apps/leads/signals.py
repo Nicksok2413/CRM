@@ -12,7 +12,9 @@ from .models import PotentialClient
 
 
 @receiver(pre_delete, sender=PotentialClient)
-def prevent_hard_delete_lead_with_history(sender: type[PotentialClient], instance: PotentialClient, **kwargs: Any) -> None:
+def prevent_hard_delete_lead_with_history(
+    sender: type[PotentialClient], instance: PotentialClient, **kwargs: Any
+) -> None:
     """
     Сигнал срабатывает перед **реальным** удалением объекта PotentialClient из БД.
 
@@ -30,6 +32,5 @@ def prevent_hard_delete_lead_with_history(sender: type[PotentialClient], instanc
     # Проверяем через `all_objects`, так как даже архивные контракты важны.
     if instance.contracts_history.all_objects.exists():
         raise ProtectedError(
-            "Невозможно удалить лида: у него есть история контрактов.",
-            instance.contracts_history.all_objects.all()
+            "Невозможно удалить лида: у него есть история контрактов.", instance.contracts_history.all_objects.all()
         )

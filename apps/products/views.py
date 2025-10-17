@@ -1,6 +1,7 @@
 """
 Представления (Views) для приложения products.
 """
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError
@@ -97,10 +98,7 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
             # Если queryset не пустой, значит, связанные объекты существуют.
             if active_campaigns.exists():
-                raise ProtectedError(
-                    "Невозможно удалить услугу, есть связанные активные кампании.",
-                    active_campaigns
-                )
+                raise ProtectedError("Невозможно удалить услугу, есть связанные активные кампании.", active_campaigns)
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
@@ -109,7 +107,8 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
         except ProtectedError:
             # Если поймали ошибку, показываем пользователю сообщение.
-            messages.error(self.request,
-                           "Эту услугу нельзя удалить, так как она используется в активных рекламных кампаниях.")
+            messages.error(
+                self.request, "Эту услугу нельзя удалить, так как она используется в активных рекламных кампаниях."
+            )
             # Возвращаем пользователя на детальную страницу.
-            return HttpResponseRedirect(reverse('products:detail', kwargs={'pk': self.object.pk}))
+            return HttpResponseRedirect(reverse("products:detail", kwargs={"pk": self.object.pk}))

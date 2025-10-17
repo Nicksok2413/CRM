@@ -1,9 +1,10 @@
 """
 Представления (Views) для приложения contracts.
 """
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet, ProtectedError
+from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
@@ -105,10 +106,9 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         """
         try:
             # Проверяем не связан ли контракт с клиентом.
-            if hasattr(self.object, 'active_client') and self.object.active_client is not None:
+            if hasattr(self.object, "active_client") and self.object.active_client is not None:
                 raise ProtectedError(
-                    "Невозможно удалить контракт: он привязан к истории клиента.",
-                    {self.object.active_client}
+                    "Невозможно удалить контракт: он привязан к истории клиента.", {self.object.active_client}
                 )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
@@ -120,4 +120,4 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
             # Если поймали ошибку, показываем пользователю сообщение.
             messages.error(self.request, "Этот контракт нельзя удалить, так как он привязан к истории клиента.")
             # Возвращаем пользователя на детальную страницу.
-            return HttpResponseRedirect(reverse('contracts:detail', kwargs={'pk': self.object.pk}))
+            return HttpResponseRedirect(reverse("contracts:detail", kwargs={"pk": self.object.pk}))

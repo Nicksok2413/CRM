@@ -1,12 +1,13 @@
 """
 Представления (Views) для приложения leads.
 """
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet, ProtectedError
+from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
@@ -121,7 +122,7 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
             if self.object.contracts_history.all_objects.exists():
                 raise ProtectedError(
                     "Невозможно удалить лида: у него есть история контрактов.",
-                    self.object.contracts_history.all_objects.all()
+                    self.object.contracts_history.all_objects.all(),
                 )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
@@ -133,7 +134,7 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
             # Если поймали ошибку, показываем пользователю сообщение.
             messages.error(self.request, "Этого лида нельзя удалить, так как у него есть история контрактов.")
             # Возвращаем пользователя на детальную страницу.
-            return HttpResponseRedirect(reverse('leads:detail', kwargs={'pk': self.object.pk}))
+            return HttpResponseRedirect(reverse("leads:detail", kwargs={"pk": self.object.pk}))
 
 
 class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -141,7 +142,8 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
     Базовый View для смены статуса лида.
     Принимает рекламную кампанию лида и новый статус из URL.
     """
-    permission_required = 'leads.change_potentialclient'
+
+    permission_required = "leads.change_potentialclient"
 
     def post(self, request, pk, status):
         lead = get_object_or_404(PotentialClient, pk=pk)
@@ -151,10 +153,10 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         if status in valid_statuses:
             lead.status = status
-            lead.save(update_fields=['status'])
+            lead.save(update_fields=["status"])
             messages.success(request, f'Статус клиента "{lead}" изменен на "{lead.get_status_display()}".')
         else:
-            messages.error(request, 'Некорректный статус.')
+            messages.error(request, "Некорректный статус.")
 
         # Возвращаемся на детальную страницу лида
-        return redirect('leads:detail', pk=lead.pk)
+        return redirect("leads:detail", pk=lead.pk)

@@ -6,8 +6,19 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When, \
-    ProtectedError
+from django.db.models import (
+    Case,
+    Count,
+    DecimalField,
+    ExpressionWrapper,
+    F,
+    Prefetch,
+    ProtectedError,
+    Q,
+    QuerySet,
+    Sum,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
@@ -115,8 +126,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
             # Ищем всех лидов, полученных от этой рекламной кампании.
             if self.object.leads.all_objects.exists():
                 raise ProtectedError(
-                    "Невозможно удалить кампанию, от нее были получены лиды.",
-                    self.object.leads.all_objects.all()
+                    "Невозможно удалить кампанию, от нее были получены лиды.", self.object.leads.all_objects.all()
                 )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
@@ -128,7 +138,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
             # Если поймали ошибку, показываем пользователю сообщение.
             messages.error(self.request, "Эту кампанию нельзя удалить, так как от нее были получены лиды.")
             # Возвращаем пользователя на детальную страницу.
-            return HttpResponseRedirect(reverse('ads:detail', kwargs={'pk': self.object.pk}))
+            return HttpResponseRedirect(reverse("ads:detail", kwargs={"pk": self.object.pk}))
 
 
 class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):

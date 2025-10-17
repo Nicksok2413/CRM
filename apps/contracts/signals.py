@@ -29,8 +29,5 @@ def prevent_hard_delete_contract_in_use(sender: type[Contract], instance: Contra
     # Связь `contract` -> `active_client` является `OneToOne`, поэтому проверяем ее наличие напрямую.
     # `hasattr` - безопасный способ проверить наличие обратной связи,
     # которая может отсутствовать, если объект еще не был сохранен полностью.
-    if hasattr(instance, 'active_client') and instance.active_client is not None:
-        raise ProtectedError(
-            "Невозможно удалить контракт: он привязан к истории клиента.",
-            {instance.active_client}
-        )
+    if hasattr(instance, "active_client") and instance.active_client is not None:
+        raise ProtectedError("Невозможно удалить контракт: он привязан к истории клиента.", {instance.active_client})

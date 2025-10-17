@@ -37,5 +37,5 @@ def prevent_hard_delete_service_with_campaigns(sender: type[Service], instance: 
         # обрабатывать, показывая пользователю список защищенных объектов.
         raise ProtectedError(
             "Невозможно удалить эту услугу, так как с ней связаны следующие активные рекламные кампании:",
-            active_campaigns
+            active_campaigns,
         )

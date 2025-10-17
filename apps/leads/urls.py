@@ -20,5 +20,5 @@ urlpatterns = [
     path("<int:pk>/delete/", LeadDeleteView.as_view(), name="delete"),
     path("<int:pk>/edit/", LeadUpdateView.as_view(), name="edit"),
     # URL для обновления статуса лида
-    path('<int:pk>/update-status/<str:status>/', UpdateLeadStatusView.as_view(), name='update_status'),
+    path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
 ]
