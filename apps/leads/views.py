@@ -3,7 +3,7 @@
 """
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet
+from django.db.models import QuerySet, ProtectedError
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404
@@ -109,10 +109,31 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
+
+        Проверяем на защищенные связанные объекты перед "мягким" удалением.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+
+        Raises:
+            ProtectedError: Если найдены связанные объекты, прерывая удаление.
         """
-        self.object.soft_delete()
-        return HttpResponseRedirect(self.get_success_url())
+        try:
+            # Проверяем историю контрактов лида.
+            if self.object.contracts_history.all_objects.exists():
+                raise ProtectedError(
+                    "Невозможно удалить лида: у него есть история контрактов.",
+                    self.object.contracts_history.all_objects.all()
+                )
+
+            # Если проверка пройдена, выполняем "мягкое" удаление.
+            self.object.soft_delete()
+            messages.success(self.request, f'Лид "{self.object}" успешно перемещен в архив.')
+            return HttpResponseRedirect(self.get_success_url())
+
+        except ProtectedError:
+            # Если поймали ошибку, показываем пользователю сообщение.
+            messages.error(self.request, "Этого лида нельзя удалить, так как у него есть история контрактов.")
+            # Возвращаем пользователя на детальную страницу.
+            return HttpResponseRedirect(reverse('leads:detail', kwargs={'pk': self.object.pk}))
 
 
 class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):

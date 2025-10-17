@@ -4,8 +4,10 @@
 
 from typing import Any
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When
+from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When, \
+    ProtectedError
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
@@ -102,10 +104,31 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
+
+        Проверяем на защищенные связанные объекты перед "мягким" удалением.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+
+        Raises:
+            ProtectedError: Если найдены связанные объекты, прерывая удаление.
         """
-        self.object.soft_delete()
-        return HttpResponseRedirect(self.get_success_url())
+        try:
+            # Ищем всех лидов, полученных от этой рекламной кампании.
+            if self.object.leads.all_objects.exists():
+                raise ProtectedError(
+                    "Невозможно удалить кампанию, от нее были получены лиды.",
+                    self.object.leads.all_objects.all()
+                )
+
+            # Если проверка пройдена, выполняем "мягкое" удаление.
+            self.object.soft_delete()
+            messages.success(self.request, f'Рекламная кампания "{self.object}" успешно перемещена в архив.')
+            return HttpResponseRedirect(self.get_success_url())
+
+        except ProtectedError:
+            # Если поймали ошибку, показываем пользователю сообщение.
+            messages.error(self.request, "Эту кампанию нельзя удалить, так как от нее были получены лиды.")
+            # Возвращаем пользователя на детальную страницу.
+            return HttpResponseRedirect(reverse('ads:detail', kwargs={'pk': self.object.pk}))
 
 
 class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):

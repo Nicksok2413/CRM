@@ -1,9 +1,9 @@
 """
 Представления (Views) для приложения contracts.
 """
-
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import QuerySet
+from django.db.models import QuerySet, ProtectedError
 from django.forms.models import BaseModelForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
@@ -96,7 +96,28 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
+
+        Проверяем на защищенные связанные объекты перед "мягким" удалением.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
+
+        Raises:
+            ProtectedError: Если найдены связанные объекты, прерывая удаление.
         """
-        self.object.soft_delete()
-        return HttpResponseRedirect(self.get_success_url())
+        try:
+            # Проверяем не связан ли контракт с клиентом.
+            if hasattr(self.object, 'active_client') and self.object.active_client is not None:
+                raise ProtectedError(
+                    "Невозможно удалить контракт: он привязан к истории клиента.",
+                    {self.object.active_client}
+                )
+
+            # Если проверка пройдена, выполняем "мягкое" удаление.
+            self.object.soft_delete()
+            messages.success(self.request, f'Контракт "{self.object}" успешно перемещен в архив.')
+            return HttpResponseRedirect(self.get_success_url())
+
+        except ProtectedError:
+            # Если поймали ошибку, показываем пользователю сообщение.
+            messages.error(self.request, "Этот контракт нельзя удалить, так как он привязан к истории клиента.")
+            # Возвращаем пользователя на детальную страницу.
+            return HttpResponseRedirect(reverse('contracts:detail', kwargs={'pk': self.object.pk}))
