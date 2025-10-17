@@ -27,6 +27,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
 from apps.customers.models import ActiveClient
+from apps.leads.models import PotentialClient
 
 from .filters import AdCampaignFilter
 from .forms import AdCampaignForm, LeadStatusFilterForm
@@ -124,7 +125,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         """
         try:
             # Ищем всех лидов, полученных от этой рекламной кампании.
-            protected_leads = self.object.leads.all_objects.all()
+            protected_leads = PotentialClient.all_objects.filter(ad_campaign=self.object)
 
             if protected_leads.exists():
                 raise ProtectedError("Невозможно удалить кампанию, от нее были получены лиды.", set(protected_leads))

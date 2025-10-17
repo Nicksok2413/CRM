@@ -13,6 +13,8 @@ from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
+from apps.customers.models import ActiveClient
+
 from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
@@ -119,7 +121,7 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         """
         try:
             # Проверяем историю контрактов лида.
-            history = self.object.contracts_history.all_objects.all()
+            history = ActiveClient.all_objects.filter(potential_client=self.object)
 
             if history.exists():
                 raise ProtectedError(
