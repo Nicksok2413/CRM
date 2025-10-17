@@ -12,11 +12,16 @@ from apps.leads.models import PotentialClient
 
 
 @receiver(post_save, sender=ActiveClient)
-def update_lead_status_on_deactivation(sender, instance: ActiveClient, **kwargs: Any):
+def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: ActiveClient, **kwargs: Any):
     """
     Сигнал для обновления статуса Лида при "мягком удалении" (деактивации) записи ActiveClient.
 
     Если менеджер деактивирует клиента, его лид автоматически вернется со статусом "В работе".
+
+    Args:
+        sender: Класс модели, отправившей сигнал (ActiveClient).
+        instance: Экземпляр модели ActiveClient, который собираются "мягко" удалить.
+        **kwargs: Дополнительные аргументы.
     """
 
     # `update_fields` содержит список полей, которые были изменены.
