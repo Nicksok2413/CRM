@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -82,9 +82,21 @@ class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного редактирования.
+        объекта после успешного создания.
         """
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал нового лида: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Лид "{self.object}" успешно создан.')
+        return response
 
 
 class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -103,6 +115,16 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         объекта после успешного редактирования.
         """
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(f"Пользователь '{self.request.user.username}' обновил лида: '{self.object}' (PK={self.object.pk}).")
+        messages.success(self.request, f'Лид "{self.object}" успешно обновлен.')
+        return response
 
 
 class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

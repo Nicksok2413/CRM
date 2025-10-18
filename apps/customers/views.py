@@ -83,6 +83,18 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         messages.success(self.request, "Данные активного клиента успешно обновлены.")
         return reverse("customers:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил запись активного клиента: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, "Данные активного клиента успешно обновлены.")
+        return response
+
 
 class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     """
@@ -100,7 +112,13 @@ class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Delete
         Переопределяем метод form_valid для выполнения "мягкого" удаления.
         Вместо реального удаления объекта из базы данных, вызываем кастомный метод soft_delete().
         """
+        # Для ActiveClient нет защищенных объектов, удаление всегда возможно.
         self.object.soft_delete()
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' 'мягко' удалил (деактивировал) "
+            f"клиента: '{self.object}' (PK={self.object.pk})."
+        )
         messages.success(self.request, f'Активный клиент "{self.object}" был успешно удален.')
         return HttpResponseRedirect(self.get_success_url())
 

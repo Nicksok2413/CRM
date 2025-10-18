@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -73,6 +73,18 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         """
         return reverse("contracts:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новый контракт: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Контракт "{self.object}" успешно создан.')
+        return response
+
 
 class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования контракта."""
@@ -86,9 +98,21 @@ class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного создания.
+        объекта после успешного редактирования.
         """
         return reverse("contracts:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил контракт: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Контракт "{self.object}" успешно обновлен.')
+        return response
 
 
 class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

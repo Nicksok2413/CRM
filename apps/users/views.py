@@ -2,6 +2,7 @@
 Представления (Views) для приложения users.
 """
 
+import logging
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,6 +13,9 @@ from apps.advertisements.models import AdCampaign
 from apps.customers.models import ActiveClient
 from apps.leads.models import PotentialClient
 from apps.products.models import Service
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.users")
 
 
 class IndexView(LoginRequiredMixin, TemplateView):
@@ -40,5 +44,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
         # Добавляем заголовок страницы
         context["title"] = "Главная страница"
+
+        logger.debug(f"Пользователь '{self.request.user.username}' загрузил главную страницу (дашборд).")
 
         return context

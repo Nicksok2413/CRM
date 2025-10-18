@@ -22,7 +22,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Coalesce
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -91,6 +91,18 @@ class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVi
         """
         return reverse("ads:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новую рекламную кампанию: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Рекламная кампания "{self.object}" успешно создана.')
+        return response
+
 
 class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования рекламной кампании."""
@@ -104,9 +116,21 @@ class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVi
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного создания.
+        объекта после успешного редактирования.
         """
         return reverse("ads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил рекламную кампанию: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Рекламная кампания "{self.object}" успешно обновлена.')
+        return response
 
 
 class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):

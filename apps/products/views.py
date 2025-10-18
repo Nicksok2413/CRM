@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -59,6 +59,18 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         """
         return reverse("products:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новую услугу: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Услуга "{self.object}" успешно создана.')
+        return response
+
 
 class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования услуги."""
@@ -75,6 +87,18 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         объекта после успешного редактирования.
         """
         return reverse("products:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил услугу: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Услуга "{self.object}" успешно обновлена.')
+        return response
 
 
 class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
