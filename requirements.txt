@@ -21,8 +21,5 @@ pillow==11.3.0
 # Валидация и анализ телефонных номеров
 phonenumberslite==9.0.16
 
-# Логирование
-# loguru
-
 # Мониторинг
-# sentry-sdk
+sentry-sdk[django]==2.42.0

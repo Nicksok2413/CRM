@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+import sentry_sdk
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -278,6 +279,31 @@ LOGGING = {
         },
     },
 }
+
+
+# ======================================================================
+# НАСТРОЙКИ SENTRY
+# ======================================================================
+
+SENTRY_DSN = config("SENTRY_DSN", default=None)
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # traces_sample_rate в 1.0, чтобы захватить 100% транзакций для мониторинга производительности.
+        # В продакшене рекомендуется устанавливать меньшее значение (0.1)
+        traces_sample_rate=1.0,
+        # Отправлять личную информацию (например, request.user) в Sentry
+        # для более удобной отладки, установите send_default_pii=True
+        send_default_pii=True,
+        # Включаем сбор логов. Sentry будет перехватывать сообщения из `logging`.
+        # Указываем уровень, с которого нужно перехватывать (например, INFO и выше)
+        # и уровень, с которого нужно записывать "хлебные крошки" (DEBUG и выше)
+        # P.S. "Хлебные крошки" (breadcrumbs) - это последовательность событий,
+        # которая привела к ошибке.
+        attach_stacktrace=True,
+    )
+
 
 # ======================================================================
 
