@@ -21,7 +21,7 @@ class Service(BaseModel):
     Модель для хранения информации об услугах компании.
     """
 
-    name = models.CharField(max_length=200, unique=True, verbose_name="Название")
+    name = models.CharField(max_length=200, verbose_name="Название")
     description = models.TextField(verbose_name="Описание")
     cost = models.DecimalField(
         max_digits=10,
@@ -42,3 +42,13 @@ class Service(BaseModel):
         verbose_name = "Услуга"
         verbose_name_plural = "Услуги"
         ordering = ["name"]
+
+        # Добавляем кастомное ограничение.
+        constraints = [
+            # Уникальность для названия.
+            # Поле `name` должно быть уникальным только для тех записей,
+            # у которых is_deleted=False (т.е. тех, которые не были 'мягко удалены').
+            models.UniqueConstraint(
+                fields=["name"], condition=models.Q(is_deleted=False), name="unique_service_name_if_not_deleted"
+            )
+        ]
