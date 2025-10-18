@@ -35,7 +35,7 @@ from .forms import AdCampaignForm, LeadStatusFilterForm
 from .models import AdCampaign
 
 # Получаем логгер для приложения
-logger = logging.getLogger("apps.advertisements")
+logger = logging.getLogger("apps.products")
 
 
 class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):

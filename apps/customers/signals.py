@@ -45,11 +45,18 @@ def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: Act
         # Получаем связанного лида
         lead = instance.potential_client
 
+        # Логируем, что сигнал сработал.
+        logger.debug(
+            f"Сигнал: Запущен `update_lead_status_on_deactivation` для ActiveClient PK={instance.pk}, "
+            f"связанного с лидом '{lead}' (PK={lead.pk})."
+        )
+
         # Если лид был "Конвертирован", возвращаем его в статус "В работе".
         if lead.status == PotentialClient.Status.CONVERTED:
             lead.status = PotentialClient.Status.IN_PROGRESS
             lead.save(update_fields=["status"])
 
+            # Логируем успешное изменение статуса.
             logger.info(
                 f"Сигнал: Статус лида '{lead}' (PK={lead.pk}) автоматически изменен на 'В работе' "
                 f"из-за деактивации записи ActiveClient (PK={instance.pk})."

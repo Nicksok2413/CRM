@@ -2,12 +2,16 @@
 Сигналы для приложения users.
 """
 
+import logging
 from typing import Any
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import Profile, User
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.users")
 
 
 @receiver(post_save, sender=User)
@@ -26,5 +30,16 @@ def create_user_profile(sender: type[User], instance: User, created: bool, **kwa
 
     # Проверяем, что это реальное создание объекта, а не загрузка из фикстур.
     if created and not kwargs.get("raw", False):
-        # Создаем профиль и связываем его с пользователем.
-        Profile.objects.create(user=instance)
+        try:
+            # Создаем профиль и связываем его с пользователем.
+            Profile.objects.create(user=instance)
+
+            # Логируем успешное создание профиля.
+            logger.info(
+                f"Сигнал: Успешно создан профиль для нового пользователя '{instance.username}' (PK={instance.pk})."
+            )
+        except Exception as exc:
+            # Логируем ошибку, если по какой-то причине профиль не создался.
+            logger.error(
+                f"Сигнал: Ошибка при создании профиля для пользователя '{instance.username}' (PK={instance.pk}). Ошибка: {exc}"
+            )
