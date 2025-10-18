@@ -36,15 +36,15 @@ def prevent_hard_delete_lead_with_history(
         ProtectedError: Если найдены связанные объекты, прерывая удаление.
     """
     # Проверяем через `all_objects`, так как даже архивные контракты важны.
-    history = ActiveClient.all_objects.filter(potential_client=instance)
+    contracts_history = ActiveClient.all_objects.filter(potential_client=instance)
 
-    if history.exists():
+    if contracts_history.exists():
         # Логируем заблокированное действие.
         logger.warning(
             f"Сигнал: Заблокирована попытка физического удаления лида '{instance}' (PK={instance.pk}), "
-            f"так как у него есть история контрактов: {[h.pk for h in history]}."
+            f"так как у него есть история контрактов: {[contract.pk for contract in contracts_history]}."
         )
 
         # Выбрасываем исключение ProtectedError. Django Admin умеет красиво его
         # обрабатывать, показывая пользователю список защищенных объектов.
-        raise ProtectedError("Невозможно удалить лида: у него есть история контрактов.", set(history))
+        raise ProtectedError("Невозможно удалить лида: у него есть история контрактов.", set(contracts_history))

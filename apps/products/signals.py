@@ -40,7 +40,7 @@ def prevent_hard_delete_service_with_campaigns(sender: type[Service], instance: 
         # Логируем заблокированное действие.
         logger.warning(
             f"Сигнал: Заблокирована попытка физического удаления услуги '{instance}' (PK={instance.pk}), "
-            f"так как она защищена активными рекламными кампаниями: {[c.pk for c in active_campaigns]}."
+            f"так как она защищена активными рекламными кампаниями: {[campaign.pk for campaign in active_campaigns]}."
         )
 
         # Выбрасываем исключение ProtectedError. Django Admin умеет красиво его
