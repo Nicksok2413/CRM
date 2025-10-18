@@ -17,9 +17,9 @@ logger = logging.getLogger("apps.customers")
 
 
 @receiver(pre_save, sender=ActiveClient)
-def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: ActiveClient, **kwargs: Any):
+def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: ActiveClient, **kwargs: Any) -> None:
     """
-    Сигнал для обновления статуса лида перед "мягком удалении" (деактивации) записи ActiveClient.
+    Сигнал для обновления статуса лида перед "мягком удалением" (деактивации) записи ActiveClient.
 
     Если менеджер деактивирует клиента, его лид автоматически вернется со статусом "В работе".
 

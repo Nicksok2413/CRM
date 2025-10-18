@@ -3,6 +3,7 @@
 """
 
 import logging
+from typing import cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -39,7 +40,10 @@ class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
         """
-        return super().get_queryset().select_related("service")
+        queryset = super().get_queryset().select_related("service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[Contract], queryset)
 
 
 class ContractDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):

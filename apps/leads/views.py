@@ -3,12 +3,13 @@
 """
 
 import logging
+from typing import cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View
@@ -44,7 +45,10 @@ class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
         select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
         """
         # queryset будет содержать лидов + данные по их рекламным кампаниям
-        return super().get_queryset().select_related("ad_campaign")
+        queryset = super().get_queryset().select_related("ad_campaign")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[PotentialClient], queryset)
 
 
 class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -66,7 +70,10 @@ class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         позволит получить все три сущности (Лид, Кампания, Услуга) одним запросом.
         """
         # queryset будет содержать лида + данные по РК + данные по услуге
-        return super().get_queryset().select_related("ad_campaign__service")
+        queryset = super().get_queryset().select_related("ad_campaign__service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[PotentialClient], queryset)
 
 
 class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
@@ -186,7 +193,7 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     permission_required = "leads.change_potentialclient"
 
-    def post(self, request, pk, status):
+    def post(self, request: HttpRequest, pk: int, status: str) -> HttpResponse:
         lead = get_object_or_404(PotentialClient, pk=pk)
         old_status = lead.get_status_display()  # Запоминаем старый статус для лога
 

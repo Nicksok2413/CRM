@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -44,7 +44,10 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
         select_related подгружает данные из двух связанных моделей
         (лида и контракта) одним запросом, избегая проблемы "N+1".
         """
-        return super().get_queryset().select_related("potential_client", "contract__service")
+        queryset = super().get_queryset().select_related("potential_client", "contract__service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[ActiveClient], queryset)
 
 
 class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -193,19 +196,28 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
         response = super().form_valid(form)
 
-        # Проверяем, что у лида еще не статус "Конвертирован"
-        if self.lead.status != PotentialClient.Status.CONVERTED:
-            # Обновляем статус лида.
-            self.lead.status = PotentialClient.Status.CONVERTED
+        # Проверяем, что self.object (экземпляр ActiveClient) был успешно создан родительским методом.
+        if self.object:
+            # Проверяем, что у лида еще не статус "Конвертирован"
+            if self.lead.status != PotentialClient.Status.CONVERTED:
+                # Обновляем статус лида.
+                self.lead.status = PotentialClient.Status.CONVERTED
+                # Сохраняем только измененное поле для эффективности.
+                self.lead.save(update_fields=["status"])
 
-            # Сохраняем только измененное поле для эффективности.
-            self.lead.save(update_fields=["status"])
+            logger.info(
+                f"Лид '{self.lead}' (PK={self.lead.pk}) успешно конвертирован в активного клиента "
+                f"пользователем '{self.request.user.username}'. "
+                f"Привязан контракт с PK={self.object.contract.pk}."
+            )
 
-        logger.info(
-            f"Лид '{self.lead}' (PK={self.lead.pk}) успешно конвертирован в активного клиента "
-            f"пользователем '{self.request.user.username}'. "
-            f"Привязан контракт с PK={self.object.contract.pk}."
-        )
+        else:
+            # Этот блок кода вряд ли когда-либо выполнится в CreateView,
+            # но он делает логику полной и защищает от непредвиденных случаев.
+            logger.error(
+                f"Не удалось создать объект ActiveClient для лида '{self.lead}' (PK={self.lead.pk}) "
+                f"пользователем '{self.request.user.username}'."
+            )
 
         # Сообщение об успехе и редирект остаются в get_success_url
         return response
