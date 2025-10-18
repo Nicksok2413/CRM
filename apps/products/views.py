@@ -2,6 +2,8 @@
 Представления (Views) для приложения products.
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError
@@ -14,6 +16,9 @@ from django_filters.views import FilterView
 from .filters import ServiceFilter
 from .forms import ServiceForm
 from .models import Service
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.products")
 
 
 class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -104,13 +109,23 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Услуга '{self.object}' (PK={self.object.pk}) была 'мягко' удалена (перемещена в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Услуга "{self.object}" успешно перемещена в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления услуги '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как она защищена связанными объектами: {exc.protected_objects}"
+            )
             messages.error(
                 self.request, "Эту услугу нельзя удалить, так как она используется в активных рекламных кампаниях."
             )
+
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("products:detail", kwargs={"pk": self.object.pk}))

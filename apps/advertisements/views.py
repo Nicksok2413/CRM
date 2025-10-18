@@ -2,6 +2,7 @@
 Представления (Views) для приложения advertisements.
 """
 
+import logging
 from typing import Any
 
 from django.contrib import messages
@@ -32,6 +33,9 @@ from apps.leads.models import PotentialClient
 from .filters import AdCampaignFilter
 from .forms import AdCampaignForm, LeadStatusFilterForm
 from .models import AdCampaign
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.advertisements")
 
 
 class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -132,11 +136,21 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Рекламная кампании '{self.object}' (PK={self.object.pk}) была 'мягко' удалена (перемещена в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Рекламная кампания "{self.object}" успешно перемещена в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления рекламной кампании '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как она защищена связанными объектами: {exc.protected_objects}"
+            )
+
             messages.error(self.request, "Эту кампанию нельзя удалить, так как от нее были получены лиды.")
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("ads:detail", kwargs={"pk": self.object.pk}))

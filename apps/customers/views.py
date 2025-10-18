@@ -2,6 +2,7 @@
 Представления (Views) для приложения customers.
 """
 
+import logging
 from typing import Any
 
 from django.contrib import messages
@@ -19,6 +20,9 @@ from apps.leads.models import PotentialClient
 from .filters import ActiveClientFilter
 from .forms import ActiveClientCreateForm, ActiveClientUpdateForm
 from .models import ActiveClient
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.customers")
 
 
 class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -119,6 +123,9 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         """Переопределяем метод `dispatch` для выполнения проверок до того, как будет показана форма."""
         # Извлекаем PK лида из URL (например, /customers/new/from-lead/15/)
         lead_pk = self.kwargs.get("lead_pk")
+
+        logger.debug(f"Пользователь '{request.user.username}' инициировал активацию лида с PK={lead_pk}.")
+
         # Получаем объект лида или возвращаем ошибку 404, если лид не найден
         self.lead = get_object_or_404(PotentialClient, pk=lead_pk)
 
@@ -128,6 +135,10 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         # Это позволяет повторно активировать "потерянных" клиентов
         # или тех, у кого закончился старый контракт.
         if self.lead.status == PotentialClient.Status.CONVERTED:
+            logger.warning(
+                f"Попытка повторной активации уже конвертированного лида '{self.lead}' (PK={self.lead.pk}) "
+                f"пользователем '{request.user.username}'."
+            )
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
             return HttpResponseRedirect(reverse("leads:list"))  # Возвращаемся в список лидов
 
@@ -171,6 +182,12 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
             # Сохраняем только измененное поле для эффективности.
             self.lead.save(update_fields=["status"])
+
+        logger.info(
+            f"Лид '{self.lead}' (PK={self.lead.pk}) успешно конвертирован в активного клиента "
+            f"пользователем '{self.request.user.username}'. "
+            f"Привязан контракт с PK={self.object.contract.pk}."
+        )
 
         # Сообщение об успехе и редирект остаются в get_success_url
         return response

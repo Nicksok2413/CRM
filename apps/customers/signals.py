@@ -2,6 +2,7 @@
 Сигналы для приложения customers.
 """
 
+import logging
 from typing import Any
 
 from django.db.models.signals import post_save
@@ -10,6 +11,9 @@ from django.dispatch import receiver
 from apps.leads.models import PotentialClient
 
 from .models import ActiveClient
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.customers")
 
 
 @receiver(post_save, sender=ActiveClient)
@@ -37,3 +41,8 @@ def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: Act
         if lead.status == PotentialClient.Status.CONVERTED:
             lead.status = PotentialClient.Status.IN_PROGRESS
             lead.save(update_fields=["status"])
+
+            logger.info(
+                f"Сигнал: Статус лида '{lead}' (PK={lead.pk}) автоматически изменен на 'В работе' "
+                f"после деактивации записи ActiveClient (PK={instance.pk})."
+            )

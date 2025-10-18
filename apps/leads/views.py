@@ -2,6 +2,8 @@
 Представления (Views) для приложения leads.
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
@@ -18,6 +20,9 @@ from apps.customers.models import ActiveClient
 from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.leads")
 
 
 class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -131,12 +136,22 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Лид '{self.object}' (PK={self.object.pk}) был 'мягко' удален (перемещен в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Лид "{self.object}" успешно перемещен в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления лида '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как он защищен связанными объектами: {exc.protected_objects}"
+            )
             messages.error(self.request, "Этого лида нельзя удалить, так как у него есть история контрактов.")
+
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("leads:detail", kwargs={"pk": self.object.pk}))
 
@@ -151,6 +166,7 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def post(self, request, pk, status):
         lead = get_object_or_404(PotentialClient, pk=pk)
+        old_status = lead.get_status_display()  # Запоминаем старый статус для лога
 
         # Проверяем, что переданный статус валиден
         valid_statuses = [status[0] for status in PotentialClient.Status.choices]
@@ -158,8 +174,17 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if status in valid_statuses:
             lead.status = status
             lead.save(update_fields=["status"])
+
+            logger.info(
+                f"Статус лида '{lead}' (PK={pk}) изменен с '{old_status}' на '{lead.get_status_display()}' "
+                f"пользователем '{request.user.username}'."
+            )
             messages.success(request, f'Статус клиента "{lead}" изменен на "{lead.get_status_display()}".')
         else:
+            logger.error(
+                f"Попытка установить некорректный статус '{status}' для лида с PK={pk} "
+                f"пользователем '{request.user.username}'."
+            )
             messages.error(request, "Некорректный статус.")
 
         # Возвращаемся на детальную страницу лида
