@@ -29,9 +29,14 @@ class AdCampaign(BaseModel):
         related_name="ad_campaigns",
         verbose_name="Рекламируемая услуга",
     )
-    channel = models.CharField(max_length=100, verbose_name="Канал продвижения")
+    channel = models.CharField(
+        max_length=100,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
+        verbose_name="Канал продвижения",
+    )
     budget = models.DecimalField(
         max_digits=10,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         decimal_places=2,
         verbose_name="Бюджет",
         validators=[MinValueValidator(Decimal("0.00"))],  # Бюджет не может быть отрицательным

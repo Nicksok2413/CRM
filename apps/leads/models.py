@@ -42,6 +42,7 @@ class PotentialClient(BaseModel):
     )
     last_name = models.CharField(
         max_length=100,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         verbose_name="Фамилия",
         validators=[validate_letters_and_hyphens],  # Валидатор для фамилии
     )

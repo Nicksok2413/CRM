@@ -29,7 +29,11 @@ class BaseModel(models.Model):
     is_deleted = models.BooleanField(default=False, verbose_name="Удалено")
 
     # Временные метки
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
+        verbose_name="Дата создания",
+    )
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
     deleted_at = models.DateTimeField(blank=True, null=True, verbose_name="Дата удаления")
 

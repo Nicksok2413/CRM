@@ -46,12 +46,13 @@ class Contract(BaseModel):
     )
     amount = models.DecimalField(
         max_digits=12,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         decimal_places=2,
         verbose_name="Сумма",
         validators=[MinValueValidator(Decimal("0.00"))],  # Сумма не может быть отрицательной
     )
-    start_date = models.DateField(verbose_name="Дата заключения")
-    end_date = models.DateField(verbose_name="Дата окончания")
+    start_date = models.DateField(db_index=True, verbose_name="Дата заключения")
+    end_date = models.DateField(db_index=True, verbose_name="Дата окончания")
 
     # Явная аннотация для обратной связи.
     # PyCharm и mypy теперь знают, что у `Contract` есть
