@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
+from django_clamd.validators import validate_file_infection
 
 from apps.common.models import BaseModel
 from apps.common.utils import create_dynamic_upload_path
@@ -38,10 +39,12 @@ class Contract(BaseModel):
         null=True,
         verbose_name="Файл с документом",
         validators=[
-            # Разрешаем только определенные типы файлов
+            # Разрешаем только определенные типы файлов.
             FileExtensionValidator(allowed_extensions=["pdf", "doc", "docx", "jpg", "jpeg", "png"]),
-            # Валидатор размера файла
+            # Валидатор размера файла.
             validate_document_size,
+            # Антивирусный сканер.
+            validate_file_infection,
         ],
     )
     amount = models.DecimalField(

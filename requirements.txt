@@ -6,20 +6,27 @@
 Django==5.2.7
 django-filter==25.2
 
+# Кэширование
+django-redis==6.0.0
+redis==6.4.0
+
 # Веб-сервер
 # gunicorn
 
 # Драйвер PostgreSQL
-psycopg[binary]==3.2.10
+psycopg[binary]==3.2.11
 
 # Переменные окружения
 python-decouple==3.8
 
 # Обработка изображений (для ImageField)
-pillow==11.3.0
+pillow==12.0.0
 
 # Валидация и анализ телефонных номеров
 phonenumberslite==9.0.16
+
+# Интеграция антивирусного сканера (ClamAV)
+django-clamd==1.0.0
 
 # Мониторинг
 sentry-sdk[django]==2.42.0
