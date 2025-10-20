@@ -50,16 +50,33 @@ document.addEventListener("DOMContentLoaded", function() {
             datasets: [{
               label: 'Количество новых лидов',
               data: data.data, // Данные по оси Y (количества)
-              borderColor: 'rgb(75, 192, 192)',
-              tension: 0.1
+              borderColor: 'rgb(75, 192, 192)', // Цвет границ
+              backgroundColor: 'rgba(75, 192, 192, 0.2)', // Цвет заливки под линией
+              fill: true, // Включаем заливку
+              tension: 0.4, // Делает линию плавной (кубической)
+              pointBackgroundColor: 'rgb(75, 192, 192)', // Цвет точек
+              pointRadius: 4, // Размер точек
             }]
           },
           options: {
+            // === НАСТРОЙКА ОСЕЙ ===
             scales: {
               y: {
-                beginAtZero: true
+                beginAtZero: true,
+                title: { // Заголовок для оси Y
+                  display: true,
+                  text: 'Количество лидов'
+                }
+              },
+              x: {
+                title: { // Заголовок для оси X
+                  display: true,
+                  text: 'Дата'
+                }
               }
-            }
+            },
+            // === ОТКЛЮЧАЕМ ЛИШНЕЕ ===
+            maintainAspectRatio: false // Позволяет графику лучше вписываться в контейнер
           }
         });
       })

@@ -238,7 +238,7 @@ def get_lead_creation_stats(request: HttpRequest) -> JsonResponse:
 
     # Выполняем "тяжелый" запрос к БД.
     # Группируем лидов по дню создания и считаем их количество.
-    stats = (
+    stats_from_db = (
         PotentialClient.objects.filter(created_at__gte=thirty_days_ago)
         .annotate(day=TruncDay("created_at"))
         .values("day")
@@ -246,10 +246,17 @@ def get_lead_creation_stats(request: HttpRequest) -> JsonResponse:
         .order_by("day")
     )
 
-    # Форматируем данные для Chart.js.
+    # Создаем словарь для быстрого поиска: {дата: количество}
+    stats_dict = {stat["day"].date(): stat["count"] for stat in stats_from_db}
+
+    # Генерируем полный список дат за последние 30 дней.
+    today = timezone.now().date()
+    date_range = [today - timedelta(days=i) for i in range(29, -1, -1)]
+
+    # Форматируем данные для Chart.js, подставляя 0 там, где не было лидов.
     # Нам нужны два массива: labels (даты) и data (количества).
-    labels = [stat["day"].strftime("%d-%m") for stat in stats]
-    data = [stat["count"] for stat in stats]
+    labels = [day.strftime("%d-%m") for day in date_range]
+    data = [stats_dict.get(day, 0) for day in date_range]
 
     response_data = {
         "labels": labels,
