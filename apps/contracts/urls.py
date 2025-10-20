@@ -8,8 +8,8 @@ from .views import (
     ContractUpdateView,
 )
 
-# Пространство имен для URL-адресов этого приложения
-# Позволит использовать, например, `{% url 'contracts:list' %}` в шаблонах
+# Пространство имен для URL-адресов этого приложения.
+# Позволит использовать, например, `{% url 'contracts:list' %}` в шаблонах.
 app_name = "contracts"
 
 urlpatterns = [

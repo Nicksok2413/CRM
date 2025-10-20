@@ -8,8 +8,8 @@ from .views import (
     ActiveClientUpdateView,
 )
 
-# Пространство имен для URL-адресов этого приложения
-# Позволит использовать, например, `{% url 'customers:list' %}` в шаблонах
+# Пространство имен для URL-адресов этого приложения.
+# Позволит использовать, например, `{% url 'customers:list' %}` в шаблонах.
 app_name = "customers"
 
 urlpatterns = [
@@ -17,6 +17,6 @@ urlpatterns = [
     path("<int:pk>/", ActiveClientDetailView.as_view(), name="detail"),
     path("<int:pk>/delete/", ActiveClientDeleteView.as_view(), name="delete"),
     path("<int:pk>/edit/", ActiveClientUpdateView.as_view(), name="edit"),
-    # URL для создания активного клиента из лида
+    # URL для создания активного клиента из лида.
     path("new/from-lead/<int:lead_pk>/", ActiveClientCreateFromLeadView.as_view(), name="create_from_lead"),
 ]

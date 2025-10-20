@@ -9,8 +9,8 @@ from .views import (
     UpdateLeadStatusView,
 )
 
-# Пространство имен для URL-адресов этого приложения
-# Позволит использовать, например, `{% url 'leads:list' %}` в шаблонах
+# Пространство имен для URL-адресов этого приложения.
+# Позволит использовать, например, `{% url 'leads:list' %}` в шаблонах.
 app_name = "leads"
 
 urlpatterns = [
@@ -19,6 +19,6 @@ urlpatterns = [
     path("<int:pk>/", LeadDetailView.as_view(), name="detail"),
     path("<int:pk>/delete/", LeadDeleteView.as_view(), name="delete"),
     path("<int:pk>/edit/", LeadUpdateView.as_view(), name="edit"),
-    # URL для обновления статуса лида
+    # URL для обновления статуса лида.
     path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
 ]

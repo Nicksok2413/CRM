@@ -2,8 +2,8 @@ from django.urls import path
 
 from .views import ServiceCreateView, ServiceDeleteView, ServiceDetailView, ServiceListView, ServiceUpdateView
 
-# Пространство имен для URL-адресов этого приложения
-# Позволит использовать, например, `{% url 'products:list' %}` в шаблонах
+# Пространство имен для URL-адресов этого приложения.
+# Позволит использовать, например, `{% url 'products:list' %}` в шаблонах.
 app_name = "products"
 
 urlpatterns = [
