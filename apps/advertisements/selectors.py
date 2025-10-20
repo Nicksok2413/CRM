@@ -6,6 +6,7 @@
 переиспользуемым и легко тестируемым.
 """
 
+from decimal import Decimal
 from typing import TypedDict
 
 from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Prefetch, Q, QuerySet, Sum, When
@@ -65,7 +66,7 @@ class CampaignDetailStats(TypedDict):
     leads_list: list
     total_leads: int
     total_active_clients: int
-    total_revenue: DecimalField
+    total_revenue: Decimal
     profit: float | None
 
 
@@ -101,10 +102,10 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
 
     # Рассчитываем общую статистику на основе отфильтрованного списка.
     active_clients = [lead.active_contract for lead in leads_list if lead.active_contract is not None]
-    total_revenue = sum(active_client.contract.amount for active_client in active_clients)
-    profit = (total_revenue / campaign.budget) * 100 if campaign.budget > 0 else None
+    total_revenue = Decimal(sum(active_client.contract.amount for active_client in active_clients))
+    profit = float((total_revenue / campaign.budget) * 100) if campaign.budget > 0 else None
 
-    # 4. Возвращаем типизированный словарь
+    # Возвращаем типизированный словарь
     return {
         "leads_list": leads_list,
         "total_leads": len(leads_list),
