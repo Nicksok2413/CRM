@@ -20,7 +20,6 @@ from apps.leads.models import PotentialClient
 from .filters import ActiveClientFilter
 from .forms import ActiveClientCreateForm, ActiveClientUpdateForm
 from .models import ActiveClient
-from .services import CustomerActivationError, activate_customer
 
 # Получаем логгер для приложения.
 logger = logging.getLogger("apps.customers")
@@ -192,29 +191,35 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         Меняем статус лида после его конвертации.
         Делегирует всю бизнес-логику активации сервисной функции `activate_customer`.
         """
-        # Получаем контракт из формы.
-        contract = form.cleaned_data.get("contract")
+        # Сначала вызываем родительский метод.
+        # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
+        response = super().form_valid(form)
 
-        try:
-            # Вызываем сервис активации.
-            activate_customer(lead=self.lead, contract=contract, user=self.request.user)
+        # Проверяем, что self.object (экземпляр ActiveClient) был успешно создан родительским методом.
+        if self.object:
+            # Проверяем, что у лида еще не статус "Конвертирован"
+            if self.lead.status != PotentialClient.Status.CONVERTED:
+                # Обновляем статус лида.
+                self.lead.status = PotentialClient.Status.CONVERTED
+                # Сохраняем только измененное поле для эффективности.
+                self.lead.save(update_fields=["status"])
 
-            # Если сервис выполнился без ошибок, готовим успешный HTTP-ответ.
-            messages.success(self.request, f'Клиент "{self.lead}" успешно активирован.')
-            return HttpResponseRedirect(self.get_success_url())
-
-        except CustomerActivationError as exc:
-            # Если сервисная функция выбросила кастомное исключение, логируем ошибку.
-            logger.warning(
-                f"Ошибка активации лида '{self.lead}' (PK={self.lead.pk}) "
-                f"пользователем '{self.request.user.username}'. Причина: {exc}"
+            logger.info(
+                f"Лид '{self.lead}' (PK={self.lead.pk}) успешно конвертирован в активного клиента "
+                f"пользователем '{self.request.user.username}'. "
+                f"Привязан контракт с PK={self.object.contract.pk}."
             )
 
-            # Показываем пользователю понятное сообщение об ошибке.
-            messages.error(self.request, str(exc))
+        else:
+            # Этот блок кода вряд ли когда-либо выполнится в CreateView,
+            # но он делает логику полной и защищает от непредвиденных случаев.
+            logger.error(
+                f"Не удалось создать объект ActiveClient для лида '{self.lead}' (PK={self.lead.pk}) "
+                f"пользователем '{self.request.user.username}'."
+            )
 
-            # Возвращаем пользователя на ту же страницу с формой и ошибкой.
-            return self.form_invalid(form)
+        # Сообщение об успехе и редирект остаются в get_success_url
+        return response
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
