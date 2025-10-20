@@ -1,5 +1,4 @@
 from django.urls import path
-from django.views.decorators.cache import cache_page
 
 from .views import IndexView
 
@@ -9,6 +8,5 @@ app_name = "users"
 
 urlpatterns = [
     # Корневой URL будет отображать главную страницу.
-    # Кэшируем всю HTML-страницу на 5 минут (300 секунд).
-    path("", cache_page(60 * 5)(IndexView.as_view()), name="index"),
+    path("", IndexView.as_view(), name="index"),
 ]

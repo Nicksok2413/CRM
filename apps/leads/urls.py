@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page
 
 from .views import (
     LeadCreateView,
@@ -23,5 +24,6 @@ urlpatterns = [
     # URL для обновления статуса лида.
     path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
     # URL для API-endpoint, возвращающий статистику создания лидов за последние 30 дней в формате JSON.
-    path("api/lead-stats/", get_lead_creation_stats, name="api_lead_stats"),
+    # Данные для графика будут кэшироваться на 15 минут (900 секунд).
+    path("api/lead-stats/", cache_page(60 * 15)(get_lead_creation_stats), name="api_lead_stats"),
 ]
