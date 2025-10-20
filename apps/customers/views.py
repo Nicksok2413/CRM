@@ -189,7 +189,6 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         """
         Вызывается после успешной валидации формы.
         Меняем статус лида после его конвертации.
-        Делегирует всю бизнес-логику активации сервисной функции `activate_customer`.
         """
         # Сначала вызываем родительский метод.
         # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
