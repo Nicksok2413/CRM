@@ -28,20 +28,20 @@ class ActiveClientCreateForm(forms.ModelForm):
         # Если его нет, `pop` вернет None.
         lead: PotentialClient | None = kwargs.pop("lead", None)
 
-        # Вызываем родительский конструктор с оставшимися kwargs
+        # Вызываем родительский конструктор с оставшимися kwargs.
         super().__init__(*args, **kwargs)
 
         # Получаем поле 'contract'
         contract_field = self.fields.get("contract")
 
-        # Проверяем, что поле существует и является нужным типом
+        # Проверяем, что поле существует и является нужным типом.
         if isinstance(contract_field, forms.ModelChoiceField):
-            # По умолчанию queryset пустой, чтобы избежать показа лишних данных, если что-то пошло не так
+            # По умолчанию queryset пустой, чтобы избежать показа лишних данных, если что-то пошло не так.
             contract_field.queryset = Contract.objects.none()
 
             # Если нам передали объект лида из View...
             if lead and lead.ad_campaign:
-                # Получаем услугу, в которой был заинтересован лид
+                # Получаем услугу, в которой был заинтересован лид.
                 service_needed = lead.ad_campaign.service
 
                 # Фильтруем queryset, чтобы показать только подходящие контракты:
@@ -49,7 +49,7 @@ class ActiveClientCreateForm(forms.ModelForm):
                 # 2. Относящиеся к нужной нам услуге.
                 contract_field.queryset = Contract.objects.filter(active_client__isnull=True, service=service_needed)
 
-                # Делаем поле пустым, если нет доступных контрактов
+                # Делаем поле пустым, если нет доступных контрактов.
                 if not contract_field.queryset.exists():
                     contract_field.empty_label = "Нет доступных контрактов для этой услуги"
                     contract_field.disabled = True
@@ -82,7 +82,7 @@ class ActiveClientUpdateForm(forms.ModelForm):
         # Django передает в форму при ее инициализации в UpdateView.
         instance = kwargs.get("instance")
 
-        # Получаем поле, с которым будем работать
+        # Получаем поле, с которым будем работать.
         contract_field = self.fields["contract"]
 
         # Убеждаемся, что мы работаем с существующим объектом (а не создаем новый).
