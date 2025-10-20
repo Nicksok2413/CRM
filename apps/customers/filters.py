@@ -6,7 +6,7 @@ from django_filters import FilterSet, OrderingFilter
 
 from .models import ActiveClient
 
-# Определяем поля для сортировки в виде кортежа кортежей
+# Определяем поля для сортировки в виде кортежа кортежей.
 # (значение_в_url, Человекочитаемая_метка)
 CUSTOMER_ORDERING_CHOICES = (
     ("potential_client__last_name", "Фамилия (А-Я)"),
@@ -19,12 +19,12 @@ CUSTOMER_ORDERING_CHOICES = (
 
 
 class ActiveClientFilter(FilterSet):
-    # Сортировка
+    # Сортировка.
     sort = OrderingFilter(choices=CUSTOMER_ORDERING_CHOICES, empty_label="Сортировка по умолчанию", label="Сортировка")
 
     class Meta:
         model = ActiveClient
-        # Фильтруем по связанной модели
+        # Фильтруем по связанной модели.
         fields = {
             "contract__service": ["exact"],
         }

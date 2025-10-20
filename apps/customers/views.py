@@ -20,8 +20,9 @@ from apps.leads.models import PotentialClient
 from .filters import ActiveClientFilter
 from .forms import ActiveClientCreateForm, ActiveClientUpdateForm
 from .models import ActiveClient
+from .services import CustomerActivationError, activate_customer
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.customers")
 
 
@@ -33,9 +34,9 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
     context_object_name = "customers"
     permission_required = "customers.view_activeclient"
 
-    # Подключаем класс фильтра
+    # Подключаем класс фильтра.
     filterset_class = ActiveClientFilter
-    # Устанавливаем пагинацию
+    # Устанавливаем пагинацию.
     paginate_by = 25
 
     def get_queryset(self) -> QuerySet[ActiveClient]:
@@ -46,7 +47,7 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
         """
         queryset = super().get_queryset().select_related("potential_client", "contract__service")
 
-        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе.
         return cast(QuerySet[ActiveClient], queryset)
 
 
@@ -83,7 +84,6 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         Переопределяем метод для перенаправления на детальную страницу
         объекта после успешного редактирования.
         """
-        messages.success(self.request, "Данные активного клиента успешно обновлены.")
         return reverse("customers:detail", kwargs={"pk": self.object.pk})
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
@@ -137,17 +137,21 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
     template_name = "customers/customers-create.html"
     permission_required = "customers.add_activeclient"
 
-    # Явно аннотируем self.lead для mypy, так как он создается в dispatch
+    # Явно аннотируем self.lead для mypy, так как он создается в dispatch.
     lead: PotentialClient
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        """Переопределяем метод `dispatch` для выполнения проверок до того, как будет показана форма."""
-        # Извлекаем PK лида из URL (например, /customers/new/from-lead/15/)
+        """
+        Переопределяем метод `dispatch` для выполнения проверок до того, как будет показана форма.
+        Проверяет, можно ли в принципе инициировать активацию для данного лида.
+        """
+
+        # Извлекаем PK лида из URL (например, /customers/new/from-lead/15/).
         lead_pk = self.kwargs.get("lead_pk")
 
         logger.debug(f"Пользователь '{request.user.username}' инициировал активацию лида с PK={lead_pk}.")
 
-        # Получаем объект лида или возвращаем ошибку 404, если лид не найден
+        # Получаем объект лида или возвращаем ошибку 404, если лид не найден.
         self.lead = get_object_or_404(PotentialClient, pk=lead_pk)
 
         # Проверяем, не является ли лид уже активным клиентом.
@@ -156,10 +160,6 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         # Это позволяет повторно активировать "потерянных" клиентов
         # или тех, у кого закончился старый контракт.
         if self.lead.status == PotentialClient.Status.CONVERTED:
-            logger.warning(
-                f"Попытка повторной активации уже конвертированного лида '{self.lead}' (PK={self.lead.pk}) "
-                f"пользователем '{request.user.username}'."
-            )
             messages.error(request, f'Клиент "{self.lead}" уже является активным.')
             return HttpResponseRedirect(reverse("leads:list"))  # Возвращаемся в список лидов
 
@@ -176,9 +176,9 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
     def get_form_kwargs(self) -> dict[str, Any]:
         """
-        Передаем дополнительные именованные аргументы в конструктор формы.
+        Передаем объект `lead` в конструктор формы, чтобы она могла отфильтровать контракты.
         """
-        # Получаем стандартный набор kwargs от родительского класса
+        # Получаем стандартный набор kwargs от родительского класса.
         kwargs = super().get_form_kwargs()
 
         # Добавляем в словарь объект `self.lead` под ключом 'lead'.
@@ -190,41 +190,35 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
         """
         Вызывается после успешной валидации формы.
         Меняем статус лида после его конвертации.
+        Делегирует всю бизнес-логику активации сервисной функции `activate_customer`.
         """
+        # Получаем контракт из формы.
+        contract = form.cleaned_data.get("contract")
 
-        # Сначала вызываем родительский метод.
-        # Он создает и сохраняет объект `ActiveClient` и помещает его в `self.object`.
-        response = super().form_valid(form)
+        try:
+            # Вызываем сервис активации.
+            activate_customer(lead=self.lead, contract=contract, user=self.request.user)
 
-        # Проверяем, что self.object (экземпляр ActiveClient) был успешно создан родительским методом.
-        if self.object:
-            # Проверяем, что у лида еще не статус "Конвертирован"
-            if self.lead.status != PotentialClient.Status.CONVERTED:
-                # Обновляем статус лида.
-                self.lead.status = PotentialClient.Status.CONVERTED
-                # Сохраняем только измененное поле для эффективности.
-                self.lead.save(update_fields=["status"])
+            # Если сервис выполнился без ошибок, готовим успешный HTTP-ответ.
+            messages.success(self.request, f'Клиент "{self.lead}" успешно активирован.')
+            return HttpResponseRedirect(self.get_success_url())
 
-            logger.info(
-                f"Лид '{self.lead}' (PK={self.lead.pk}) успешно конвертирован в активного клиента "
-                f"пользователем '{self.request.user.username}'. "
-                f"Привязан контракт с PK={self.object.contract.pk}."
+        except CustomerActivationError as exc:
+            # Если сервисная функция выбросила кастомное исключение, логируем ошибку.
+            logger.warning(
+                f"Ошибка активации лида '{self.lead}' (PK={self.lead.pk}) "
+                f"пользователем '{self.request.user.username}'. Причина: {exc}"
             )
 
-        else:
-            # Этот блок кода вряд ли когда-либо выполнится в CreateView,
-            # но он делает логику полной и защищает от непредвиденных случаев.
-            logger.error(
-                f"Не удалось создать объект ActiveClient для лида '{self.lead}' (PK={self.lead.pk}) "
-                f"пользователем '{self.request.user.username}'."
-            )
+            # Показываем пользователю понятное сообщение об ошибке.
+            messages.error(self.request, str(exc))
 
-        # Сообщение об успехе и редирект остаются в get_success_url
-        return response
+            # Возвращаем пользователя на ту же страницу с формой и ошибкой.
+            return self.form_invalid(form)
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         """
-        Добавляем в контекст шаблона объект лида для отображения информации о нем.
+        Добавляем в контекст шаблона объект `lead` для отображения информации о нем.
         """
         context = super().get_context_data(**kwargs)
         context["lead"] = self.lead
@@ -232,7 +226,7 @@ class ActiveClientCreateFromLeadView(LoginRequiredMixin, PermissionRequiredMixin
 
     def get_success_url(self) -> str:
         """
-        Перенаправляем на список активных клиентов после активации.
+        Перенаправляем на список активных клиентов после успешной активации.
         """
         messages.success(self.request, f'Клиент "{self.lead}" успешно активирован.')
         return reverse("customers:list")

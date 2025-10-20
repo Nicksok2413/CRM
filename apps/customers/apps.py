@@ -10,5 +10,5 @@ class CustomersConfig(AppConfig):
         Переопределяем метод ready для импорта и регистрации сигналов.
         Этот метод вызывается, когда приложение готово к работе.
         """
-        # Импортируем сигналы здесь, чтобы избежать AppRegistryNotReady
+        # Импортируем сигналы здесь, чтобы избежать AppRegistryNotReady.
         import apps.customers.signals  # noqa

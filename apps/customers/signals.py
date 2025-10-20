@@ -42,7 +42,7 @@ def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: Act
     # Сравниваем старое и новое значения поля is_deleted.
     # Нас интересует момент, когда оно меняется с False на True.
     if not old_instance.is_deleted and instance.is_deleted:
-        # Получаем связанного лида
+        # Получаем связанного лида.
         lead = instance.potential_client
 
         # Логируем, что сигнал сработал.

@@ -31,7 +31,7 @@ class ActiveClientCreateForm(forms.ModelForm):
         # Вызываем родительский конструктор с оставшимися kwargs.
         super().__init__(*args, **kwargs)
 
-        # Получаем поле 'contract'
+        # Получаем поле 'contract'.
         contract_field = self.fields.get("contract")
 
         # Проверяем, что поле существует и является нужным типом.
