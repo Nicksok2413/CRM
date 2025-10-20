@@ -7,6 +7,7 @@ from .views import (
     LeadListView,
     LeadUpdateView,
     UpdateLeadStatusView,
+    get_lead_creation_stats,
 )
 
 # Пространство имен для URL-адресов этого приложения.
@@ -21,4 +22,6 @@ urlpatterns = [
     path("<int:pk>/edit/", LeadUpdateView.as_view(), name="edit"),
     # URL для обновления статуса лида.
     path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
+    # URL для API-endpoint, возвращающий статистику создания лидов за последние 30 дней в формате JSON.
+    path("api/lead-stats/", get_lead_creation_stats, name="api_lead_stats"),
 ]

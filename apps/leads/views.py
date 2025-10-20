@@ -3,15 +3,18 @@
 """
 
 import logging
+from datetime import timedelta
 from typing import cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import ProtectedError, QuerySet
+from django.db.models import Count, ProtectedError, QuerySet
+from django.db.models.functions import TruncDay
 from django.forms.models import BaseModelForm
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -218,3 +221,39 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         # Возвращаемся на детальную страницу лида
         return redirect("leads:detail", pk=lead.pk)
+
+
+def get_lead_creation_stats(request: HttpRequest) -> JsonResponse:
+    """
+    API-endpoint, возвращающий статистику создания лидов
+    за последние 30 дней в формате JSON.
+    """
+
+    # Проверяем аутентификацию пользователя.
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=403)
+
+    # Определяем диапазон дат.
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+
+    # Выполняем "тяжелый" запрос к БД.
+    # Группируем лидов по дню создания и считаем их количество.
+    stats = (
+        PotentialClient.objects.filter(created_at__gte=thirty_days_ago)
+        .annotate(day=TruncDay("created_at"))
+        .values("day")
+        .annotate(count=Count("id"))
+        .order_by("day")
+    )
+
+    # Форматируем данные для Chart.js.
+    # Нам нужны два массива: labels (даты) и data (количества).
+    labels = [stat["day"].strftime("%d-%m") for stat in stats]
+    data = [stat["count"] for stat in stats]
+
+    response_data = {
+        "labels": labels,
+        "data": data,
+    }
+
+    return JsonResponse(response_data)
