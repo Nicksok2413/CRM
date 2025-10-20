@@ -7,6 +7,7 @@ from typing import Any, cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.cache import cache
 from django.db.models import (
     Case,
     Count,
@@ -249,46 +250,85 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
     permission_required = "advertisements.view_adcampaign"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        Переопределяем метод для добавления в контекст детальной статистики.
+        Реализована логика кэширования для "тяжелых" вычислений.
+        """
+        # 1. Подготовка.
+
+        # Получаем стандартный контекст и объект кампании.
         context = super().get_context_data(**kwargs)
         campaign = self.get_object()
 
-        # Получаем всех лидов этой кампании, предзагружая историю контрактов
+        # Получаем значение фильтра из GET-параметров (например, 'active' или '').
+        status_filter = self.request.GET.get("status", "")
+
+        # 2. Работа с кэшем.
+
+        # Создаем уникальный ключ кэша, который зависит от:
+        # - ID рекламной кампании
+        # - Выбранного фильтра по статусу
+        cache_key = f"ad_campaign_stats_{campaign.pk}_status_{status_filter}"
+
+        # Пытаемся получить вычисленные данные из кэша.
+        computed_data = cache.get(cache_key)
+
+        # Если данные нашлись в кэше.
+        if computed_data:
+            # Добавляем их в контекст и возвращаем результат.
+            context.update(computed_data)
+            return context
+
+        # 3. "Тяжелые" вычисления (если данных в кэше нет).
+
+        # Получаем всех лидов этой кампании, предзагружая историю контрактов.
         # И внутри этой предзагрузки также подтягиваем данные самих контрактов.
-        leads = campaign.leads.all().prefetch_related(
-            # Prefetch - для обратной связи (может быть много записей)
+        leads_query = campaign.leads.all().prefetch_related(
+            # Prefetch - для обратной связи (может быть много записей).
             Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
         )
 
-        # ============ Логика фильтрации ============
+        # Копируем queryset в список.
+        leads_list = list(leads_query)
 
-        # Форма фильтрации по статусу
+        # Форма фильтрации по статусу.
         status_filter_form = LeadStatusFilterForm(self.request.GET)
 
+        # Логика фильтрации.
         if status_filter_form.is_valid():
             status = status_filter_form.cleaned_data.get("status")
 
             if status == "active":
-                leads = [lead for lead in leads if lead.active_contract]
+                leads_list = [lead for lead in leads_list if lead.active_contract]
             elif status == "archived":
-                leads = [lead for lead in leads if not lead.active_contract and lead.contracts_history.exists()]
+                leads_list = [
+                    lead for lead in leads_list if not lead.active_contract and lead.contracts_history.exists()
+                ]
             elif status == "in_work":
-                leads = [lead for lead in leads if not lead.contracts_history.exists()]
+                leads_list = [lead for lead in leads_list if not lead.contracts_history.exists()]
 
-        # ==========================================
+        # Рассчитываем общую статистику на основе отфильтрованного списка.
+        active_clients = [lead.active_contract for lead in leads_list if lead.active_contract is not None]
+        total_revenue = sum(active_client.contract.amount for active_client in active_clients)
 
-        # Рассчитываем общую статистику для этой кампании
-        active_clients = [lead.active_contract for lead in leads if lead.active_contract is not None]
-        total_revenue = sum(ac.contract.amount for ac in active_clients)
+        # 4. Сохранение в кэш и возврат результата
 
-        context["leads_list"] = leads  # Передаем отфильтрованный список
-        context["status_filter_form"] = status_filter_form  # Передаем саму форму
-        context["total_leads"] = len(leads)
-        context["total_active_clients"] = len(active_clients)
-        context["total_revenue"] = total_revenue
+        # Собираем все вычисленные данные в словарь.
+        computed_data = {
+            "leads_list": leads_list,
+            "status_filter_form": status_filter_form,
+            "total_leads": len(leads_list),
+            "total_active_clients": len(active_clients),
+            "total_revenue": total_revenue,
+            "profit": (total_revenue / campaign.budget) * 100 if campaign.budget > 0 else None,
+        }
 
-        if campaign.budget > 0:
-            context["profit"] = (total_revenue / campaign.budget) * 100
-        else:
-            context["profit"] = None
+        # Сохраняем словарь в кэш на 15 минут.
+        # В следующий раз, когда кто-то запросит эту же страницу с этим же фильтром, возьмем данные отсюда.
+        cache.set(cache_key, computed_data, timeout=60 * 15)
 
+        # Добавляем вычисленные данные в контекст.
+        context.update(computed_data)
+
+        # Возвращаем контекст.
         return context

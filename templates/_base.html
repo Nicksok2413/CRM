@@ -1,4 +1,5 @@
 {% load static %}
+{% load cache %}
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -47,46 +48,56 @@
         {% endif %}
         <!-- ==================================================================== -->
 
-        <ul class="list-unstyled px-2">
-            {% if perms.products.view_service %}
-            <li><a href="/products/" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-microchip"></i></span><span class="ml-1"> Услуги</span>
-            </a></li>
-            {% endif %}
-            {% if perms.advertisements.view_adcampaign %}
-            <li><a href="/ads/" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-ad"></i></span><span class="ml-1"> Рекламные кампании</span>
-            </a></li>
-            {% endif %}
-            {% if perms.leads.view_lead %}
-            <li><a href="/leads/" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-user-clock"></i></span><span class="px-1"> Лиды</span>
-            </a></li>
-            {% endif %}
-            {% if perms.contracts.view_contract %}
-            <li><a href="/contracts/" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-file-alt"></i></span><span class="px-1"> Контракты</span>
-            </a></li>
-            {% endif %}
-            {% if perms.customers.view_customer %}
-            <li><a href="/customers/" class="bar-item text-decoration-none px-3 py-3 d-block">
-                <span><i class="fas fa-user-check"></i></span><span class="px-1"> Активные клиенты</span>
-            </a></li>
-            {% endif %}
-            <li>
-                <hr>
-            </li>
-            <li>
-                <!-- Оборачиваем кнопку в форму, отправляющую POST-запрос на URL выхода -->
-                <form id="logout-form" method="post" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <!-- Кнопку стилизуем так, чтобы она выглядела как пункт меню -->
-                    <button type="submit" class="bar-item text-decoration-none px-3 py-3 d-block btn btn-link text-start w-100">
-                        <span><i class="fas fa-sign-out-alt"></i></span><span class="px-1"> Выход</span>
-                    </button>
-                </form>
-            </li>
-        </ul>
+        {% comment %}
+            Кэшируем блок меню на 1 час (3600 секунд).
+            Ключ кэша будет зависеть от ID пользователя.
+            Это значит, что у каждого пользователя будет своя собственная
+            кэшированная версия меню.
+        {% endcomment %}
+
+        {% cache 3600 sidebar request.user.id %}
+            <ul class="list-unstyled px-2">
+                {% if perms.products.view_service %}
+                <li><a href="/products/" class="bar-item text-decoration-none px-3 py-3 d-block">
+                    <span><i class="fas fa-microchip"></i></span><span class="ml-1"> Услуги</span>
+                </a></li>
+                {% endif %}
+                {% if perms.advertisements.view_adcampaign %}
+                <li><a href="/ads/" class="bar-item text-decoration-none px-3 py-3 d-block">
+                    <span><i class="fas fa-ad"></i></span><span class="ml-1"> Рекламные кампании</span>
+                </a></li>
+                {% endif %}
+                {% if perms.leads.view_lead %}
+                <li><a href="/leads/" class="bar-item text-decoration-none px-3 py-3 d-block">
+                    <span><i class="fas fa-user-clock"></i></span><span class="px-1"> Лиды</span>
+                </a></li>
+                {% endif %}
+                {% if perms.contracts.view_contract %}
+                <li><a href="/contracts/" class="bar-item text-decoration-none px-3 py-3 d-block">
+                    <span><i class="fas fa-file-alt"></i></span><span class="px-1"> Контракты</span>
+                </a></li>
+                {% endif %}
+                {% if perms.customers.view_customer %}
+                <li><a href="/customers/" class="bar-item text-decoration-none px-3 py-3 d-block">
+                    <span><i class="fas fa-user-check"></i></span><span class="px-1"> Активные клиенты</span>
+                </a></li>
+                {% endif %}
+                <li>
+                    <hr>
+                </li>
+                <li>
+                    <!-- Оборачиваем кнопку в форму, отправляющую POST-запрос на URL выхода -->
+                    <form id="logout-form" method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <!-- Кнопку стилизуем так, чтобы она выглядела как пункт меню -->
+                        <button type="submit" class="bar-item text-decoration-none px-3 py-3 d-block btn btn-link text-start w-100">
+                            <span><i class="fas fa-sign-out-alt"></i></span><span class="px-1"> Выход</span>
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        {% endcache %}
+
     </div>
     <div class="content px-3 pt-4">
         {% block content %}{% endblock %}

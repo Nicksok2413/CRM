@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page
 
 from .views import IndexView
 
@@ -8,5 +9,5 @@ app_name = "users"
 
 urlpatterns = [
     # Корневой URL будет отображать главную страницу
-    path("", IndexView.as_view(), name="index"),
+    path("", cache_page(60 * 5)(IndexView.as_view()), name="index"),
 ]
