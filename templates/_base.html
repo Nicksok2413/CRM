@@ -67,7 +67,7 @@
                     <span><i class="fas fa-ad"></i></span><span class="ml-1"> Рекламные кампании</span>
                 </a></li>
                 {% endif %}
-                {% if perms.leads.view_lead %}
+                {% if perms.leads.view_potentialclient or 'Менеджер' in request.user.groups.all|join:"," %}
                 <li><a href="/leads/" class="bar-item text-decoration-none px-3 py-3 d-block">
                     <span><i class="fas fa-user-clock"></i></span><span class="px-1"> Лиды</span>
                 </a></li>
@@ -77,7 +77,7 @@
                     <span><i class="fas fa-file-alt"></i></span><span class="px-1"> Контракты</span>
                 </a></li>
                 {% endif %}
-                {% if perms.customers.view_customer %}
+                {% if perms.customers.view_activeclient or 'Менеджер' in request.user.groups.all|join:"," %}
                 <li><a href="/customers/" class="bar-item text-decoration-none px-3 py-3 d-block">
                     <span><i class="fas fa-user-check"></i></span><span class="px-1"> Активные клиенты</span>
                 </a></li>

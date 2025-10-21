@@ -1,5 +1,6 @@
 {% extends "_base.html" %}
 
+{% load guardian_tags %}
 {% load pagination_tags %}
 
 {% block content %}
@@ -58,10 +59,12 @@
                     <tr>
 
                         <td>
-                            {% if perms.leads.view_potentialclient %}
-                                <a href="{% url 'leads:detail' lead.pk %}">{{ lead.last_name }} {{ lead.first_name }}</a>
+                            {# Проверяем объектное право на просмотр #}
+                            {% get_obj_perms request.user for lead as "lead_perms" %}
+                            {% if "view_potentialclient" in lead_perms %}
+                                <a href="{% url 'leads:detail' lead.pk %}">{{ lead }}</a>
                             {% else %}
-                                {{ lead.last_name }} {{ lead.first_name }}
+                                {{ lead }}
                             {% endif %}
                         </td>
 
@@ -119,7 +122,8 @@
 
                                 {% endif %}
 
-                                {% if perms.leads.delete_potentialclient %}
+                                {# Проверяем объектное право на удаление #}
+                                {% if "delete_potentialclient" in lead_perms %}
                                     <a href="{% url 'leads:delete' lead.pk %}" class="btn btn-danger btn-sm" title="Удалить лида">
                                         <i class="fas fa-trash"></i>
                                     </a>

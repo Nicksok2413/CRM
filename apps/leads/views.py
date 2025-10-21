@@ -46,14 +46,14 @@ class LeadListView(LoginRequiredMixin, FilterView):
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
         Переопределяем queryset для оптимизации и чтобы он учитывал объектные права.
-        select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
+        select_related подгружает связанные рекламные кампании и менеджера одним запросом, избегая проблемы "N+1".
         """
         # Получаем пользователя из запроса.
         user = self.request.user
 
         # Получаем базовый queryset с оптимизацией.
-        # Он будет содержать лидов + данные по их рекламным кампаниям.
-        base_queryset = PotentialClient.objects.select_related("ad_campaign")
+        # Он будет содержать лидов + данные по их рекламным кампаниям + менеджера.
+        base_queryset = PotentialClient.objects.select_related("ad_campaign", "manager")
 
         # Проверяем, есть ли у пользователя глобальное право на просмотр всех лидов.
         # Это право обычно есть у суперпользователей, администраторов.

@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -44,10 +44,26 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
         select_related подгружает данные из двух связанных моделей
         (лида и контракта) одним запросом, избегая проблемы "N+1".
         """
-        queryset = super().get_queryset().select_related("potential_client", "contract__service")
+        # Получаем пользователя из запроса.
+        user = self.request.user
 
-        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе.
-        return cast(QuerySet[ActiveClient], queryset)
+        # Получаем базовый queryset с оптимизацией.
+        # Он будет содержать данные активных клиентов + лидов + контрактов и услуг.
+        base_queryset = super().get_queryset().select_related("potential_client", "contract__service")
+
+        # Проверяем, есть ли у пользователя глобальное право на просмотр всех активных клиентов.
+        # Это право обычно есть у суперпользователей, администраторов.
+        if user.has_perm("customers.view_activeclient"):
+            # Если право есть - возвращаем всех активных клиентов.
+            return base_queryset
+
+        # # Если глобального права нет - фильтруем по полю manager у связанного лида.
+        return base_queryset.filter(potential_client__manager=user)
+
+        # queryset = super().get_queryset().select_related("potential_client", "contract__service")
+        #
+        # # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе.
+        # return cast(QuerySet[ActiveClient], queryset)
 
 
 class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
