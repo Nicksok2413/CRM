@@ -18,6 +18,8 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
+from guardian.mixins import PermissionRequiredMixin as ObjectPermissionRequiredMixin
+from guardian.shortcuts import get_objects_for_user
 
 from apps.customers.models import ActiveClient
 
@@ -29,13 +31,12 @@ from .models import PotentialClient
 logger = logging.getLogger("apps.leads")
 
 
-class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class LeadListView(LoginRequiredMixin, FilterView):
     """Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой."""
 
     model = PotentialClient
     template_name = "leads/leads-list.html"
     context_object_name = "leads"
-    permission_required = "leads.view_potentialclient"
 
     # Подключаем класс фильтра
     filterset_class = LeadFilter
@@ -44,17 +45,34 @@ class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
 
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
-        Переопределяем queryset для оптимизации.
+        Переопределяем queryset для оптимизации и чтобы он учитывал объектные права.
         select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
         """
-        # queryset будет содержать лидов + данные по их рекламным кампаниям
-        queryset = super().get_queryset().select_related("ad_campaign")
+        # Получаем пользователя из запроса.
+        user = self.request.user
 
-        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
-        return cast(QuerySet[PotentialClient], queryset)
+        # Получаем базовый queryset с оптимизацией.
+        # Он будет содержать лидов + данные по их рекламным кампаниям.
+        base_queryset = PotentialClient.objects.select_related("ad_campaign")
+
+        # Проверяем, есть ли у пользователя глобальное право на просмотр всех лидов.
+        # Это право обычно есть у суперпользователей, администраторов.
+        if user.has_perm("leads.view_potentialclient"):
+            # Если право есть - возвращаем всех лидов.
+            return base_queryset
+
+        # Если глобального права нет, возвращаем только те объекты,
+        # на которые у пользователя есть объектное право.
+        return get_objects_for_user(user, "leads.view_potentialclient", klass=base_queryset)
+
+        # # queryset будет содержать лидов + данные по их рекламным кампаниям
+        # queryset = super().get_queryset().select_related("ad_campaign")
+        #
+        # # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        # return cast(QuerySet[PotentialClient], queryset)
 
 
-class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class LeadDetailView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DetailView):
     """Представление для детального просмотра лида."""
 
     model = PotentialClient
@@ -109,7 +127,7 @@ class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         return response
 
 
-class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class LeadUpdateView(LoginRequiredMixin, ObjectPermissionRequiredMixin, UpdateView):
     """Представление для редактирования лида."""
 
     model = PotentialClient
@@ -137,7 +155,7 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         return response
 
 
-class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class LeadDeleteView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DeleteView):
     """Представление для "мягкого" удаления лида."""
 
     model = PotentialClient

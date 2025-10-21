@@ -8,7 +8,6 @@
 """
 
 from decouple import config
-
 from django.db import migrations
 
 # ==============================================================================
@@ -21,49 +20,46 @@ from django.db import migrations
 # Вложенное значение: Список кодовых имен прав (codename) для моделей этого приложения.
 
 ROLES_PERMISSIONS = {
-    'Оператор': {
-        'leads': [
-            'add_potentialclient',
-            'change_potentialclient',
-            'delete_potentialclient',
-            'view_potentialclient',
+    "Оператор": {
+        "leads": [
+            "add_potentialclient",
+            "change_potentialclient",
+            "delete_potentialclient",
+            "view_potentialclient",
         ],
     },
-    'Маркетолог': {
-        'products': [
-            'add_service',
-            'change_service',
-            'delete_service',
-            'view_service',
+    "Маркетолог": {
+        "products": [
+            "add_service",
+            "change_service",
+            "delete_service",
+            "view_service",
         ],
-        'advertisements': [
-            'add_adcampaign',
-            'change_adcampaign',
-            'delete_adcampaign',
-            'view_adcampaign',
+        "advertisements": [
+            "add_adcampaign",
+            "change_adcampaign",
+            "delete_adcampaign",
+            "view_adcampaign",
         ],
     },
-    'Менеджер': {
-        'leads': [
-            'view_potentialclient',
+    "Менеджер": {
+        "contracts": [
+            "add_contract",
+            "change_contract",
+            "delete_contract",
+            "view_contract",
         ],
-        'contracts': [
-            'add_contract',
-            'change_contract',
-            'delete_contract',
-            'view_contract',
-        ],
-        'customers': [
-            'add_activeclient',
-            'change_activeclient',
-            'delete_activeclient',
-            'view_activeclient',
+        "customers": [
+            "add_activeclient",
+            "change_activeclient",
+            "delete_activeclient",
+            "view_activeclient",
         ],
     },
     # Администратор получает все права через флаг is_superuser.
     # Создаем группу "Администратор" для единообразия и на случай,
     # если понадобится дать полный доступ обычному пользователю, не делая его суперюзером.
-    'Администратор': {},
+    "Администратор": {},
 }
 
 
@@ -91,8 +87,8 @@ def ensure_permissions_exist(apps, schema_editor):
        ('add', 'change', 'delete', 'view').
     """
     # Получаем моделей, с которыми мы будем работать
-    ContentType = apps.get_model('contenttypes', 'ContentType')
-    Permission = apps.get_model('auth', 'Permission')
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Permission = apps.get_model("auth", "Permission")
 
     # 1. Собираем информацию о всех моделях, упомянутых в ролях
     # Проходим по всей структуре `ROLES_PERMISSIONS` и собираем
@@ -105,11 +101,10 @@ def ensure_permissions_exist(apps, schema_editor):
             for perm_codename in perm_codenames:
                 # Извлекаем имя модели из кодового имени права
                 # Пример: 'view_service' -> 'service'
-                model_name = perm_codename.split('_')[1]
+                model_name = perm_codename.split("_")[1]
 
                 # Проверяем, не обработали ли мы уже эту модель
                 if (app_label, model_name) not in models_info:
-
                     try:
                         # Получаем класс модели, чтобы извлечь ее метаданные
                         model = apps.get_model(app_label, model_name)
@@ -126,7 +121,6 @@ def ensure_permissions_exist(apps, schema_editor):
 
     # Проходим по каждой найденной паре (приложение, модель)
     for (app_label, model_name), verbose_name in models_info.items():
-
         # Создаем или получаем ContentType
         content_type, created = ContentType.objects.get_or_create(
             app_label=app_label,
@@ -134,7 +128,7 @@ def ensure_permissions_exist(apps, schema_editor):
         )
 
         # 3. Создаем или получаем 4 стандартных права для этого ContentType
-        for action in ['add', 'change', 'delete', 'view']:
+        for action in ["add", "change", "delete", "view"]:
             codename = f"{action}_{model_name}"
             name = f"Can {action} {verbose_name}"
 
@@ -160,29 +154,27 @@ def create_superuser_and_roles(apps, schema_editor):
     # 1. Получаем все необходимые модели.
     # Используем apps.get_model() для получения исторических версий моделей,
     # соответствующих моменту применения этой миграции.
-    User = apps.get_model('users', 'User')
-    Profile = apps.get_model('users', 'Profile')
-    Group = apps.get_model('auth', 'Group')
-    Permission = apps.get_model('auth', 'Permission')
-    ContentType = apps.get_model('contenttypes', 'ContentType')
+    User = apps.get_model("users", "User")
+    Profile = apps.get_model("users", "Profile")
+    Group = apps.get_model("auth", "Group")
+    Permission = apps.get_model("auth", "Permission")
+    ContentType = apps.get_model("contenttypes", "ContentType")
 
     # 2. Создаем суперпользователя
     # Используем decouple.config() для чтения из .env
-    admin_username = config('ADMIN_USERNAME', default='admin')
-    admin_password = config('ADMIN_PASSWORD', default='password')
-    admin_email = config('ADMIN_EMAIL', default='admin@example.com')
+    admin_username = config("ADMIN_USERNAME", default="admin")
+    admin_password = config("ADMIN_PASSWORD", default="password")
+    admin_email = config("ADMIN_EMAIL", default="admin@example.com")
 
     # Проверяем, не существует ли уже такой пользователь
     try:
         if not User.objects.filter(username=admin_username).exists():
             admin_user = User.objects.create_superuser(
-                username=admin_username,
-                email=admin_email,
-                password=admin_password
+                username=admin_username, email=admin_email, password=admin_password
             )
 
             # Сигналы не работают во время миграций, поэтому профиль суперпользователю создаем вручную.
-            Profile.objects.create(user=admin_user, position='Администратор')
+            Profile.objects.create(user=admin_user, position="Администратор")
 
             print(f"\n  Суперпользователь '{admin_username}' и его профиль успешно созданы.")
         else:
@@ -216,7 +208,7 @@ def create_superuser_and_roles(apps, schema_editor):
                 try:
                     # Извлекаем имя модели из кодового имени права.
                     # Пример: 'view_service' -> 'service'
-                    model_name = perm_codename.split('_')[1]
+                    model_name = perm_codename.split("_")[1]
 
                     # Находим ContentType, который связывает право с конкретной моделью.
                     content_type = ContentType.objects.get(app_label=app_label, model=model_name)
@@ -230,9 +222,7 @@ def create_superuser_and_roles(apps, schema_editor):
                     print(f"    - Право '{perm_codename}' для '{app_label}.{model_name}' назначено.")
 
                 except ContentType.DoesNotExist:
-                    print(
-                        f"    - ОШИБКА: Модель '{app_label}.{model_name}' не найдена для права '{perm_codename}'."
-                    )
+                    print(f"    - ОШИБКА: Модель '{app_label}.{model_name}' не найдена для права '{perm_codename}'.")
                 except Permission.DoesNotExist:
                     print(f"    - ОШИБКА: Право '{perm_codename}' не найдено в базе данных.")
                 except IndexError:
@@ -251,11 +241,11 @@ def revert_migration(apps, schema_editor):
     """
     Откат миграции: удаляет созданные данные.
     """
-    User = apps.get_model('users', 'User')
-    Group = apps.get_model('auth', 'Group')
+    User = apps.get_model("users", "User")
+    Group = apps.get_model("auth", "Group")
 
     # Удаление суперпользователя каскадно удалит и связанный с ним профиль
-    admin_username = config('ADMIN_USERNAME', default='admin')
+    admin_username = config("ADMIN_USERNAME", default="admin")
     User.objects.filter(username=admin_username).delete()
 
     # Удаляем группы
@@ -268,22 +258,18 @@ class Migration(migrations.Migration):
     # Эта миграция должна выполняться только после того, как будут созданы
     # начальные таблицы для всех задействованных приложений.
     dependencies = [
-        ('users', '0001_initial'),
-        ('auth', '0012_alter_user_first_name_max_length'),  # Стандартная миграция auth
-        ('contenttypes', '0002_remove_content_type_name'),  # Стандартная миграция contenttypes
-        ('products', '0001_initial'),
-        ('advertisements', '0001_initial'),
-        ('leads', '0001_initial'),
-        ('contracts', '0001_initial'),
-        ('customers', '0001_initial'),
+        ("users", "0001_initial"),
+        ("auth", "0012_alter_user_first_name_max_length"),  # Стандартная миграция auth
+        ("contenttypes", "0002_remove_content_type_name"),  # Стандартная миграция contenttypes
+        ("products", "0001_initial"),
+        ("advertisements", "0001_initial"),
+        ("leads", "0001_initial"),
+        ("contracts", "0001_initial"),
+        ("customers", "0001_initial"),
     ]
 
     operations = [
         # `migrations.RunPython` выполняет кастомный Python-код.
         # `atomic=True` гарантирует, что все операции внутри функции будут выполнены в одной транзакции.
-        migrations.RunPython(
-            code=create_superuser_and_roles,
-            reverse_code=revert_migration,
-            atomic=True
-        ),
+        migrations.RunPython(code=create_superuser_and_roles, reverse_code=revert_migration, atomic=True),
     ]

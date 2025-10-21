@@ -19,7 +19,7 @@ class PotentialClientForm(forms.ModelForm):
 
     class Meta:
         model = PotentialClient
-        fields = ("first_name", "last_name", "email", "phone", "ad_campaign")
+        fields = ("first_name", "last_name", "email", "phone", "ad_campaign", "manager")
 
     def clean_email(self) -> str:
         """
