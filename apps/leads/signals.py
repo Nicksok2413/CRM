@@ -6,8 +6,9 @@ import logging
 from typing import Any
 
 from django.db.models import ProtectedError
-from django.db.models.signals import pre_delete
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from guardian.shortcuts import assign_perm
 
 from apps.customers.models import ActiveClient
 
@@ -15,6 +16,45 @@ from .models import PotentialClient
 
 # Получаем логгер для приложения
 logger = logging.getLogger("apps.leads")
+
+
+@receiver(post_save, sender=PotentialClient)
+def assign_lead_permissions_on_save(
+    sender: type[PotentialClient], instance: PotentialClient, created: bool, **kwargs: Any
+) -> None:
+    """
+    Сигнал для автоматического назначения объектных прав на лида.
+
+    Срабатывает каждый раз после сохранения объекта PotentialClient.
+    - Если у лида назначен менеджер, сигнал выдает ему права на просмотр,
+      изменение и удаление этого **конкретного** лида.
+
+    Args:
+    sender: Класс модели, отправившей сигнал (PotentialClient).
+    instance: Экземпляр сохраняемого лида (PotentialClient).
+    created: Флаг, указывающий, была ли запись сохранена.
+    **kwargs: Дополнительные аргументы.
+    """
+
+    # Если у лида есть ответственный менеджер.
+    if instance.manager:
+        # Список прав, которые нужно выдать.
+        permissions = [
+            "leads.view_potentialclient",
+            "leads.change_potentialclient",
+            "leads.delete_potentialclient",
+        ]
+
+        # Назначаем права.
+        # `assign_perm` - это основная функция django-guardian.
+        # Она говорит: "Дай пользователю `instance.manager` права из списка `permissions` на объект `instance`".
+        for permission in permissions:
+            assign_perm(permission, instance.manager, instance)
+
+        logger.info(
+            f"Сигнал: Менеджеру (username={instance.manager.username}) "
+            f"назначены права на управление лидом '{instance}' (PK={instance.pk}), "
+        )
 
 
 @receiver(pre_delete, sender=PotentialClient)

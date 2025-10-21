@@ -29,7 +29,7 @@ SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
 # ======================================================================
-# ...
+# НАСТОЙКИ ДЛЯ DOCKER
 # ======================================================================
 
 ALLOWED_HOSTS = [
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Приложения
+    # Приложения.
     "apps.advertisements.apps.AdvertisementsConfig",
     "apps.common.apps.CommonConfig",
     "apps.contracts.apps.ContractsConfig",
@@ -68,8 +68,9 @@ INSTALLED_APPS = [
     "apps.leads.apps.LeadsConfig",
     "apps.products.apps.ProductsConfig",
     "apps.users.apps.UsersConfig",
-    # Сторонние приложения
+    # Сторонние приложения.
     "django_filters",
+    "guardian",
 ]
 
 MIDDLEWARE = [
@@ -92,7 +93,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Указываем Django искать шаблоны в корневой папке templates
+        # Указываем Django искать шаблоны в корневой папке templates.
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -176,15 +177,15 @@ DATE_INPUT_FORMATS = [
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 # ======================================================================
 
-# URL, по которому будут доступны статические файлы в браузере
+# URL, по которому будут доступны статические файлы в браузере.
 STATIC_URL = "static/"
 
-# Директория, где Django будет искать статические файлы проекта
+# Директория, где Django будет искать статические файлы проекта.
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-# Директория, куда `collectstatic` будет собирать все статические файлы для продакшена
+# Директория, куда `collectstatic` будет собирать все статические файлы для продакшена.
 # STATIC_ROOT = BASE_DIR / 'staticfiles' # Пока не используем, но это для будущего
 
 
@@ -200,7 +201,7 @@ MEDIA_ROOT = BASE_DIR / "uploads"
 # НАСТРОЙКИ СООБЩЕНИЙ
 # ======================================================================
 
-# Сопоставляем уровни сообщений Django с классами Bootstrap Alerts
+# Сопоставляем уровни сообщений Django с классами Bootstrap Alerts.
 MESSAGE_TAGS = {
     messages.DEBUG: "alert-secondary",
     messages.INFO: "alert-info",
@@ -224,7 +225,7 @@ LOGFILE_COUNT = 5
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    # Форматеры
+    # Форматеры.
     "formatters": {
         # Форматер для вывода в консоль во время разработки.
         "verbose": {
@@ -240,7 +241,7 @@ LOGGING = {
             "format": "[%(server_time)s] %(message)s",
         },
     },
-    # Обработчики
+    # Обработчики.
     "handlers": {
         # Обработчик для вывода логов в консоль (стандартный поток ошибок).
         "console": {
@@ -273,7 +274,7 @@ LOGGING = {
             "formatter": "django.server",
         },
     },
-    # Логгеры
+    # Логгеры.
     "loggers": {
         # Логгер для самого Django.
         "django": {
@@ -307,14 +308,14 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         # traces_sample_rate в 1.0, чтобы захватить 100% транзакций для мониторинга производительности.
-        # В продакшене рекомендуется устанавливать меньшее значение (0.1)
+        # В продакшене рекомендуется устанавливать меньшее значение (0.1).
         traces_sample_rate=1.0,
         # Отправлять личную информацию (например, request.user) в Sentry
-        # для более удобной отладки, установите send_default_pii=True
+        # для более удобной отладки, установите send_default_pii=True.
         send_default_pii=True,
         # Включаем сбор логов. Sentry будет перехватывать сообщения из `logging`.
         # Указываем уровень, с которого нужно перехватывать (например, INFO и выше)
-        # и уровень, с которого нужно записывать "хлебные крошки" (DEBUG и выше)
+        # и уровень, с которого нужно записывать "хлебные крошки" (DEBUG и выше).
         # P.S. "Хлебные крошки" (breadcrumbs) - это последовательность событий,
         # которая привела к ошибке.
         attach_stacktrace=True,
@@ -339,7 +340,7 @@ CACHES = {
     }
 }
 
-# Время жизни кэша по умолчанию (в секундах)
+# Время жизни кэша по умолчанию (в секундах).
 CACHE_TTL = 60 * 10  # 10 минут
 
 
@@ -349,14 +350,14 @@ CACHE_TTL = 60 * 10  # 10 минут
 
 # IP-адрес и порт, на которых слушает демон clamd.
 # 127.0.0.1 и 3310 - это значения по умолчанию.
-# Убедитесь, что в файле /etc/clamav/clamd.conf раскомментирована строка `TCPSocket 3310`
-# CLAMD_HOST = '127.0.0.1'
-# CLAMD_PORT = 3310
+# Убедитесь, что в файле /etc/clamav/clamd.conf раскомментирована строка `TCPSocket 3310`.
+CLAMD_HOST = "127.0.0.1"
+CLAMD_PORT = 3310
 
 # Можно также использовать сокет, если он настроен:
-CLAMD_SOCKET = "/var/run/clamav/clamd.ctl"
+# CLAMD_SOCKET = "/var/run/clamav/clamd.ctl"
 
-# Таймаут для ожидания ответа от сканера (в секундах)
+# Таймаут для ожидания ответа от сканера (в секундах).
 CLAMD_TIMEOUT = 5
 
 
@@ -373,21 +374,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # НАСТРОЙКИ АУТЕНТИФИКАЦИИ И АВТОРИЗАЦИИ
 # ======================================================================
 
-# Указываем Django использовать кастомную модель пользователя
+# Указываем Django использовать кастомную модель пользователя.
 AUTH_USER_MODEL = "users.User"
 
-# Указываем Django, как проверять логин/пароль и как загружать права доступа
+# Указываем Django, как проверять логин/пароль и как загружать права доступа.
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
+    # Добавляем бэкенд от guardian. Он расширяет стандартный, добавляя проверку прав на уровне объектов.
+    "guardian.backends.ObjectPermissionBackend",
 ]
 
-# URL для перенаправления неавторизованных пользователей
+# URL для перенаправления неавторизованных пользователей.
 LOGIN_URL = "/accounts/login/"
 
-# URL, на который пользователь будет перенаправлен после успешного входа
+# URL, на который пользователь будет перенаправлен после успешного входа.
 LOGIN_REDIRECT_URL = "/"
 
-# URL, на который пользователь будет перенаправлен после выхода
+# URL, на который пользователь будет перенаправлен после выхода.
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 
@@ -404,8 +407,8 @@ DEFAULT_PHONE_REGION = "BY"
 # БИЗНЕС-КОНСТАНТЫ ПРОЕКТА
 # ======================================================================
 
-# Максимальный размер загружаемого изображения (в МБ)
+# Максимальный размер загружаемого изображения (в МБ).
 MAX_IMAGE_SIZE_MB = 2
 
-# Максимальный размер загружаемого документа (в МБ)
+# Максимальный размер загружаемого документа (в МБ).
 MAX_DOCUMENT_SIZE_MB = 10
