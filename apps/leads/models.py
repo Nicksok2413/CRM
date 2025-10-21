@@ -73,6 +73,18 @@ class PotentialClient(BaseModel):
         verbose_name="Рекламная кампания",
     )
 
+    # Связь с пользователем (менеджером), который отвечает за этого лида.
+    # on_delete=models.SET_NULL: если менеджер будет удален, лид не удалится,
+    # а просто станет "бесхозным", и его сможет подобрать другой.
+    manager = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,  # Поле не обязательно, лид может быть "общим"
+        related_name="managed_leads",  # Имя для обратной связи
+        verbose_name="Ответственный менеджер",
+    )
+
     # Явная аннотация для обратной связи.
     # PyCharm и mypy теперь знают, что у `PotentialClient` есть
     # менеджер `contracts_history`, который возвращает QuerySet объектов `ActiveClient`.

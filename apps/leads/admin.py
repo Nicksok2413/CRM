@@ -13,8 +13,9 @@ class PotentialClientAdmin(admin.ModelAdmin):
     Административный класс для модели PotentialClient.
     """
 
-    # Поля для отображения в списке всех лидов, включая связанную рекламную компанию.
-    list_display = ("last_name", "first_name", "email", "phone", "status", "ad_campaign")
+    # Поля для отображения в списке всех лидов,
+    # включая связанную рекламную компанию и ответственного менеджера.
+    list_display = ("last_name", "first_name", "email", "phone", "status", "ad_campaign", "manager")
 
     # Оптимизация запросов: при загрузке списка лидов
     # сразу загружаем связанные данные рекламных компаний одним SQL-запросом, избегая проблемы "N+1".

@@ -4,7 +4,8 @@
 
 # Веб-фреймворк
 Django==5.2.7
-django-filter==25.2
+django-filter==25.2  # Фильтрация
+django-guardian==3.2.0  # Объектные права доступа
 
 # Кэширование
 django-redis==6.0.0

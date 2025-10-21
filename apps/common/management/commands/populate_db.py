@@ -8,6 +8,7 @@ from argparse import ArgumentParser
 from typing import Any
 
 import factory  # noqa
+from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from faker import Faker  # noqa
@@ -18,8 +19,9 @@ from apps.contracts.models import Contract
 from apps.customers.models import ActiveClient
 from apps.leads.models import PotentialClient
 from apps.products.models import Service
+from apps.users.models import User
 
-# Инициализируем Faker для генерации данных
+# Инициализируем Faker для генерации данных.
 # 'ru_RU' для генерации русскоязычных имен, текстов и т.д.
 faker = Faker("ru_RU")
 
@@ -57,6 +59,10 @@ class PotentialClientFactory(factory.django.DjangoModelFactory):
     phone = factory.LazyFunction(faker.phone_number)
     status = factory.LazyFunction(
         lambda: random.choice([PotentialClient.Status.NEW, PotentialClient.Status.IN_PROGRESS])
+    )
+    manager = factory.LazyFunction(
+        # Выбираем случайного пользователя (менеджера) из БД.
+        lambda: User.objects.filter(groups__name="Менеджер").order_by("?").first()
     )
 
 
@@ -97,82 +103,97 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args: Any, **options: Any) -> None:
         """
-        Основной метод команды, который будет выполнен при ее запуске.
+        Основной метод команды, который будет выполнен при запуске команды.
         """
         count = options["count"]
         self.stdout.write(self.style.SUCCESS(f"Начинаем наполнение базы данных. Будет создано по ~{count} записей..."))
 
-        # Очищаем генератор уникальных значений Faker перед каждым запуском
+        # Очищаем генератор уникальных значений Faker перед каждым запуском.
         faker.unique.clear()
 
-        # 1. Создаем услуги
+        # 1. Создаем трех пользователей (менеджеров).
+        self.stdout.write('Создаем тестовых пользователей и добавляем их в группу "Менеджер"...')
+
+        # Находим группу "Менеджер".
+        # `get_or_create` безопасен, если группы еще нет.
+        manager_group, _ = Group.objects.get_or_create(name="Менеджер")
+
+        for idx in range(1, 4):
+            # Создаем пользователя.
+            user = User.objects.create_user(
+                username=f"manager_{idx}", password="password", first_name=f"Менеджер_{idx}"
+            )
+            # Добавляем пользователя в группу.
+            user.groups.add(manager_group)
+
+        # 2. Создаем услуги.
         self.stdout.write("Создаем услуги...")
-        # `create_batch` создает указанное количество объектов
+        # `create_batch` создает указанное количество объектов.
         services = ServiceFactory.create_batch(count // 2 or 1)  # создаем в два раза меньше услуг
 
-        # 2. Создаем Рекламные Кампании, привязывая их к Услугам
+        # 3. Создаем Рекламные Кампании, привязывая их к Услугам.
         self.stdout.write("Создаем рекламные кампании...")
         campaigns = []
 
         for _ in range(count):
-            # Для каждой кампании выбираем случайную услугу
+            # Для каждой кампании выбираем случайную услугу.
             service = random.choice(services)
             campaigns.append(AdCampaignFactory.create(service=service))
 
-        # 3. Создаем потенциальных клиентов (лидов)
+        # 4. Создаем потенциальных клиентов (лидов).
         self.stdout.write("Создаем потенциальных клиентов...")
         leads = []
 
         for _ in range(count * 3):  # Создадим в 3 раза больше лидов
-            # Случайно выбираем одну из уже созданных кампаний
+            # Случайно выбираем одну из уже созданных кампаний.
             campaign = random.choice(campaigns)
             leads.append(PotentialClientFactory.create(ad_campaign=campaign))
 
-        # 4. Создадим некоторое количество "свободных" контрактов
+        # 5. Создадим некоторое количество "свободных" контрактов.
         self.stdout.write('Создаем "свободные" контракты...')
-        # Получим список всех услуг, чтобы создавать контракты для них
+        # Получим список всех услуг, чтобы создавать контракты для них.
         all_services = Service.objects.all()
         free_contracts = []
 
         for _ in range(count):
-            # Создаем контракт для случайной услуги
+            # Создаем контракт для случайной услуги.
             service = random.choice(all_services)
             free_contracts.append(ContractFactory.create(service=service))
 
-        # 5. "Активируем" часть клиентов
+        # 6. "Активируем" часть клиентов.
         self.stdout.write("Создаем активных клиентов и связанные с ними контракты...")
-        # Перемешиваем список лидов
+        # Перемешиваем список лидов.
         random.shuffle(leads)
 
-        # Делаем активной примерно треть от всех лидов
+        # Делаем активной примерно треть от всех лидов.
         num_active_clients = len(leads) // 3
 
         for lead in leads[:num_active_clients]:
-            # Получаем услугу из кампании, с которой пришел лид
+            # Получаем услугу из кампании, с которой пришел лид.
             service_for_contract = lead.ad_campaign.service
-            # Создаем контракт для этой конкретной услуги
+            # Создаем контракт для этой конкретной услуги.
             contract = ContractFactory.create(service=service_for_contract)
-            # Создаем запись об активном клиенте, связывая лида и контракт
+            # Создаем запись об активном клиенте, связывая лида и контракт.
             ActiveClientFactory.create(potential_client=lead, contract=contract)
 
-        # 6. Создаем архивные контракты для некоторых из уже активных клиентов
+        # 7. Создаем архивные контракты для некоторых из уже активных клиентов.
         self.stdout.write("Создаем архивные (старые) контракты...")
 
-        # Список активных клиентов
+        # Список активных клиентов.
         active_leads_with_history = leads[:num_active_clients]
 
-        # Перемешиваем список активных клиентов
+        # Перемешиваем список активных клиентов.
         random.shuffle(active_leads_with_history)
 
-        # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту
+        # Возьмем 1/5 от активных и добавим им еще по одному "старому" контракту.
         for lead in active_leads_with_history[: len(active_leads_with_history) // 5]:
-            # Получаем услугу из кампании, с которой пришел лид
+            # Получаем услугу из кампании, с которой пришел лид.
             service_for_contract = lead.ad_campaign.service
-            # Создаем контракт для этой конкретной услуги
+            # Создаем контракт для этой конкретной услуги.
             contract = ContractFactory.create(service=service_for_contract)
-            # Создаем еще одну запись ActiveClient
+            # Создаем еще одну запись ActiveClient.
             old_active_client_record = ActiveClientFactory.create(potential_client=lead, contract=contract)
-            # И сразу же "мягко" ее удаляем, чтобы она стала архивной
+            # И сразу же "мягко" ее удаляем, чтобы она стала архивной.
             old_active_client_record.soft_delete()
 
         self.stdout.write(self.style.SUCCESS("База данных успешно наполнена!"))
