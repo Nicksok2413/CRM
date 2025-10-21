@@ -2,35 +2,28 @@
 Представления (Views) для приложения advertisements.
 """
 
-from typing import Any
+import logging
+from typing import Any, cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import (
-    Case,
-    Count,
-    DecimalField,
-    ExpressionWrapper,
-    F,
-    Prefetch,
-    ProtectedError,
-    Q,
-    QuerySet,
-    Sum,
-    When,
-)
-from django.db.models.functions import Coalesce
+from django.core.cache import cache
+from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
-from apps.customers.models import ActiveClient
+from apps.leads.models import PotentialClient
 
 from .filters import AdCampaignFilter
 from .forms import AdCampaignForm, LeadStatusFilterForm
 from .models import AdCampaign
+from .selectors import get_campaigns_with_stats, get_detailed_stats_for_campaign
+
+# Получаем логгер для приложения.
+logger = logging.getLogger("apps.products")
 
 
 class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -38,13 +31,13 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView
 
     model = AdCampaign
     template_name = "ads/ads-list.html"
-    # Переименуем переменную контекста, чтобы соответствовать шаблону (ads)
+    # Переименуем переменную контекста, чтобы соответствовать шаблону (ads).
     context_object_name = "ads"
     permission_required = "advertisements.view_adcampaign"
 
-    # Подключаем класс фильтра
+    # Подключаем класс фильтра, который включает логику фильтрации и сортировки.
     filterset_class = AdCampaignFilter
-    # Устанавливаем пагинацию
+    # Устанавливаем пагинацию.
     paginate_by = 20
 
     def get_queryset(self) -> QuerySet[AdCampaign]:
@@ -52,7 +45,10 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
         """
-        return super().get_queryset().select_related("service")
+        queryset = super().get_queryset().select_related("service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[AdCampaign], queryset)
 
 
 class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -86,6 +82,18 @@ class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVi
         """
         return reverse("ads:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новую рекламную кампанию: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Рекламная кампания "{self.object}" успешно создана.')
+        return response
+
 
 class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования рекламной кампании."""
@@ -99,9 +107,21 @@ class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVi
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного создания.
+        объекта после успешного редактирования.
         """
         return reverse("ads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил рекламную кампанию: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Рекламная кампания "{self.object}" успешно обновлена.')
+        return response
 
 
 class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -124,18 +144,28 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
         """
         try:
             # Ищем всех лидов, полученных от этой рекламной кампании.
-            protected_leads = self.object.leads.all_objects.all()
+            protected_leads = PotentialClient.all_objects.filter(ad_campaign=self.object)
 
             if protected_leads.exists():
                 raise ProtectedError("Невозможно удалить кампанию, от нее были получены лиды.", set(protected_leads))
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Рекламная кампании '{self.object}' (PK={self.object.pk}) была 'мягко' удалена (перемещена в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Рекламная кампания "{self.object}" успешно перемещена в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления рекламной кампании '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как она защищена связанными объектами: {exc.protected_objects}"
+            )
+
             messages.error(self.request, "Эту кампанию нельзя удалить, так как от нее были получены лиды.")
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("ads:detail", kwargs={"pk": self.object.pk}))
@@ -149,56 +179,24 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, Filte
     model = AdCampaign
     template_name = "ads/ads-statistic.html"
     context_object_name = "ads"
-    # Согласно ТЗ, все роли могут смотреть статистику
     permission_required = "advertisements.view_adcampaign"
 
-    # Подключаем класс фильтра
+    # Подключаем класс фильтра, который включает логику фильтрации и сортировки.
     filterset_class = AdCampaignFilter
-    # Устанавливаем пагинацию
+    # Устанавливаем пагинацию.
     paginate_by = 20
 
-    def get_queryset(self) -> Any:
+    def get_queryset(self) -> QuerySet[AdCampaign]:
         """
-        Переопределяем queryset для добавления вычисляемых полей (аннотаций).
+        Делегирует получение аннотированного queryset селектору `get_campaigns_with_stats`.
         """
-        # 1. Сначала получаем базовый queryset
-        queryset = super().get_queryset()
-
-        # 2. Добавляем аннотации
-        annotated_queryset = queryset.annotate(
-            # Количество уникальных лидов для каждой кампании, которые не были "мягко" удалены.
-            leads_count=Count("leads", filter=Q(leads__is_deleted=False), distinct=True),
-            # Количество активных клиентов для каждой кампании, которые не были "мягко" удалены.
-            customers_count=Count(
-                "leads__contracts_history", filter=Q(leads__contracts_history__is_deleted=False), distinct=True
-            ),
-            # Суммарный доход от контрактов активных клиентов.
-            # Coalesce(..., 0) заменяет NULL на 0, если у кампании нет дохода.
-            total_revenue=Coalesce(
-                Sum("leads__contracts_history__contract__amount", filter=Q(leads__contracts_history__is_deleted=False)),
-                0,
-                output_field=DecimalField(),
-            ),
-            # Рассчитываем соотношение дохода к бюджету.
-            # Используем Case/When, чтобы избежать деления на ноль, если бюджет равен 0.
-            # Используем ExpressionWrapper, чтобы явно указать Django,
-            # что результат деления должен быть DecimalField.
-            # Это решает проблемы с типами данных на уровне базы данных.
-            profit=Case(
-                When(budget=0, then=None),  # Если бюджет 0, оставляем поле пустым
-                default=ExpressionWrapper(
-                    (F("total_revenue") / F("budget")) * 100,  # Умножаем на 100, чтобы получить проценты
-                    output_field=DecimalField(max_digits=10, decimal_places=2),
-                ),
-            ),
-        )
-
-        return annotated_queryset
+        return get_campaigns_with_stats()
 
 
 class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     """
     Представление для детальной статистики по одной рекламной кампании.
+    Использует кэширование для повышения производительности.
     """
 
     model = AdCampaign
@@ -207,46 +205,55 @@ class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin,
     permission_required = "advertisements.view_adcampaign"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """
+        Переопределяем метод для сбора и кэширования контекста для детальной страницы статистики.
+        Делегирует вычисления данных селектору `get_detailed_stats_for_campaign`.
+        """
+        # 1. Подготовка.
+
+        # Получаем стандартный контекст и объект кампании.
         context = super().get_context_data(**kwargs)
         campaign = self.get_object()
 
-        # Получаем всех лидов этой кампании, предзагружая историю контрактов
-        # И внутри этой предзагрузки также подтягиваем данные самих контрактов.
-        leads = campaign.leads.all().prefetch_related(
-            # Prefetch - для обратной связи (может быть много записей)
-            Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
-        )
-
-        # ============ Логика фильтрации ============
-
-        # Форма фильтрации по статусу
+        # Создаем экземпляр формы фильтрации по статусу с данными из GET-запроса.
         status_filter_form = LeadStatusFilterForm(self.request.GET)
 
-        if status_filter_form.is_valid():
-            status = status_filter_form.cleaned_data.get("status")
+        # 2. Валидируем форму.
 
-            if status == "active":
-                leads = [lead for lead in leads if lead.active_contract]
-            elif status == "archived":
-                leads = [lead for lead in leads if not lead.active_contract and lead.contracts_history.exists()]
-            elif status == "in_work":
-                leads = [lead for lead in leads if not lead.contracts_history.exists()]
-
-        # ==========================================
-
-        # Рассчитываем общую статистику для этой кампании
-        active_clients = [lead.active_contract for lead in leads if lead.active_contract is not None]
-        total_revenue = sum(ac.contract.amount for ac in active_clients)
-
-        context["leads_list"] = leads  # Передаем отфильтрованный список
-        context["status_filter_form"] = status_filter_form  # Передаем саму форму
-        context["total_leads"] = len(leads)
-        context["total_active_clients"] = len(active_clients)
-        context["total_revenue"] = total_revenue
-
-        if campaign.budget > 0:
-            context["profit"] = (total_revenue / campaign.budget) * 100
+        # Если данные в GET некорректны, is_valid() вернет False.
+        if not status_filter_form.is_valid():
+            # На случай, если кто-то подделает GET-параметр.
+            # Просто сбрасываем фильтр до значения по умолчанию.
+            status_filter = ""
         else:
-            context["profit"] = None
+            # Если все в порядке, берем очищенное значение.
+            status_filter = status_filter_form.cleaned_data.get("status", "")
 
+        # 3. Работа с кэшем.
+
+        # Создаем уникальный ключ кэша, который зависит от:
+        # - ID рекламной кампании
+        # - Выбранного фильтра по статусу
+        cache_key = f"ad_campaign_stats_{campaign.pk}_status_{status_filter}"
+
+        # Пытаемся получить вычисленные данные из кэша.
+        computed_data = cache.get(cache_key)
+
+        # Если данных в кэше нет.
+        if not computed_data:
+            logger.debug(f"Кэш для ключа '{cache_key}' не найден. Выполняем вычисления.")
+
+            # Вызываем селектор для вычисления данных.
+            # Передаем в селектор кампанию и значение фильтра.
+            computed_data = get_detailed_stats_for_campaign(campaign=campaign, status_filter=status_filter)
+
+            # Сохраняем результат в кэш на 15 минут.
+            # В следующий раз, когда кто-то запросит эту же страницу с этим же фильтром, возьмем данные отсюда.
+            cache.set(cache_key, computed_data, timeout=60 * 15)
+
+        # Добавляем данные и форму в контекст.
+        context.update(computed_data)
+        context["status_filter_form"] = status_filter_form
+
+        # Возвращаем контекст.
         return context

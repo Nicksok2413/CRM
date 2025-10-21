@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django_clamd.validators import validate_file_infection
 
 from apps.common.utils import create_dynamic_upload_path
 from apps.common.validators import validate_image_size
@@ -63,8 +64,12 @@ class Profile(models.Model):
         null=True,
         verbose_name="Фото",
         validators=[
-            validate_image_size,
+            # Разрешаем только определенные типы файлов.
             FileExtensionValidator(allowed_extensions=["jpg", "jpeg", "png"]),
+            # Валидатор размера файла.
+            validate_image_size,
+            # Антивирусный сканер
+            validate_file_infection,
         ],
     )
 

@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.cache import cache_page
 
 from .views import (
     LeadCreateView,
@@ -7,10 +8,11 @@ from .views import (
     LeadListView,
     LeadUpdateView,
     UpdateLeadStatusView,
+    get_lead_creation_stats,
 )
 
-# Пространство имен для URL-адресов этого приложения
-# Позволит использовать, например, `{% url 'leads:list' %}` в шаблонах
+# Пространство имен для URL-адресов этого приложения.
+# Позволит использовать, например, `{% url 'leads:list' %}` в шаблонах.
 app_name = "leads"
 
 urlpatterns = [
@@ -19,6 +21,9 @@ urlpatterns = [
     path("<int:pk>/", LeadDetailView.as_view(), name="detail"),
     path("<int:pk>/delete/", LeadDeleteView.as_view(), name="delete"),
     path("<int:pk>/edit/", LeadUpdateView.as_view(), name="edit"),
-    # URL для обновления статуса лида
+    # URL для обновления статуса лида.
     path("<int:pk>/update-status/<str:status>/", UpdateLeadStatusView.as_view(), name="update_status"),
+    # URL для API-endpoint, возвращающий статистику создания лидов за последние 30 дней в формате JSON.
+    # Данные для графика будут кэшироваться на 15 минут (900 секунд).
+    path("api/lead-stats/", cache_page(60 * 15)(get_lead_creation_stats), name="api_lead_stats"),
 ]

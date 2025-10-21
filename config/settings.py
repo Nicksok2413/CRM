@@ -12,7 +12,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+import sentry_sdk
 from decouple import config
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -192,6 +194,171 @@ STATICFILES_DIRS = [
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "uploads"
+
+
+# ======================================================================
+# НАСТРОЙКИ СООБЩЕНИЙ
+# ======================================================================
+
+# Сопоставляем уровни сообщений Django с классами Bootstrap Alerts
+MESSAGE_TAGS = {
+    messages.DEBUG: "alert-secondary",
+    messages.INFO: "alert-info",
+    messages.SUCCESS: "alert-success",
+    messages.WARNING: "alert-warning",
+    messages.ERROR: "alert-danger",
+}
+
+
+# ======================================================================
+# НАСТРОЙКИ ЛОГИРОВАНИЯ
+# https://docs.djangoproject.com/en/5.2/topics/logging/
+# ======================================================================
+
+LOGFILE_NAME = BASE_DIR / "logs/info.log"
+LOGFILE_ERROR_NAME = BASE_DIR / "logs/error.log"
+LOGFILE_SIZE = 5 * 1024 * 1024  # 5 Mb
+LOGFILE_COUNT = 5
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    # Форматеры
+    "formatters": {
+        # Форматер для вывода в консоль во время разработки.
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
+        },
+        # Простой форматер для продакшен-файлов.
+        "simple": {
+            "format": "[%(asctime)s] %(levelname)s: %(message)s",
+        },
+        # Специальный форматер для логов запросов Django.
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[%(server_time)s] %(message)s",
+        },
+    },
+    # Обработчики
+    "handlers": {
+        # Обработчик для вывода логов в консоль (стандартный поток ошибок).
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        # Обработчик для записи всех логов уровня INFO и выше в один файл.
+        "file_info": {
+            "level": "INFO",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGFILE_NAME,
+            "maxBytes": LOGFILE_SIZE,
+            "backupCount": LOGFILE_COUNT,
+            "formatter": "simple",
+        },
+        # Обработчик для записи только ошибок (ERROR и CRITICAL) в отдельный файл.
+        "file_error": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGFILE_ERROR_NAME,
+            "maxBytes": LOGFILE_SIZE,
+            "backupCount": LOGFILE_COUNT,
+            "formatter": "simple",
+        },
+        # Обработчик для логов сервера разработки Django.
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+    },
+    # Логгеры
+    "loggers": {
+        # Логгер для самого Django.
+        "django": {
+            "handlers": ["console", "file_info", "file_error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Логгер для веб-сервера Django (только в консоль).
+        "django.server": {
+            "handlers": ["django.server"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Логгер для приложений (apps).
+        "apps": {
+            "handlers": ["console", "file_info", "file_error"],
+            "level": "DEBUG",  # В режиме DEBUG ловим все сообщения
+            "propagate": False,
+        },
+    },
+}
+
+
+# ======================================================================
+# НАСТРОЙКИ SENTRY
+# ======================================================================
+
+SENTRY_DSN = config("SENTRY_DSN", default=None)
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        # traces_sample_rate в 1.0, чтобы захватить 100% транзакций для мониторинга производительности.
+        # В продакшене рекомендуется устанавливать меньшее значение (0.1)
+        traces_sample_rate=1.0,
+        # Отправлять личную информацию (например, request.user) в Sentry
+        # для более удобной отладки, установите send_default_pii=True
+        send_default_pii=True,
+        # Включаем сбор логов. Sentry будет перехватывать сообщения из `logging`.
+        # Указываем уровень, с которого нужно перехватывать (например, INFO и выше)
+        # и уровень, с которого нужно записывать "хлебные крошки" (DEBUG и выше)
+        # P.S. "Хлебные крошки" (breadcrumbs) - это последовательность событий,
+        # которая привела к ошибке.
+        attach_stacktrace=True,
+    )
+
+
+# ======================================================================
+# НАСТРОЙКИ КЭШИРОВАНИЯ
+# https://docs.djangoproject.com/en/5.2/topics/cache/
+# ======================================================================
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # URL Redis-сервера.
+        # `db=1` означает, что мы используем "базу данных" №1 для кэша,
+        # чтобы не смешивать его с другими потенциальными задачами (например, Celery).
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+# Время жизни кэша по умолчанию (в секундах)
+CACHE_TTL = 60 * 10  # 10 минут
+
+
+# ======================================================================
+# НАСТРОЙКИ CLAMAV (АНТИВИРУСНАЯ ПРОВЕРКА ФАЙЛОВ)
+# ======================================================================
+
+# IP-адрес и порт, на которых слушает демон clamd.
+# 127.0.0.1 и 3310 - это значения по умолчанию.
+# Убедитесь, что в файле /etc/clamav/clamd.conf раскомментирована строка `TCPSocket 3310`
+# CLAMD_HOST = '127.0.0.1'
+# CLAMD_PORT = 3310
+
+# Можно также использовать сокет, если он настроен:
+CLAMD_SOCKET = "/var/run/clamav/clamd.ctl"
+
+# Таймаут для ожидания ответа от сканера (в секундах)
+CLAMD_TIMEOUT = 5
+
 
 # ======================================================================
 

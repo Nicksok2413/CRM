@@ -2,11 +2,14 @@
 Представления (Views) для приложения contracts.
 """
 
+import logging
+from typing import cast
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -14,6 +17,9 @@ from django_filters.views import FilterView
 from .filters import ContractFilter
 from .forms import ContractForm
 from .models import Contract
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.contracts")
 
 
 class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -34,7 +40,10 @@ class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
         Переопределяем queryset для оптимизации.
         select_related подгружает связанные услуги одним запросом, избегая проблемы "N+1".
         """
-        return super().get_queryset().select_related("service")
+        queryset = super().get_queryset().select_related("service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[Contract], queryset)
 
 
 class ContractDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -68,6 +77,18 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         """
         return reverse("contracts:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новый контракт: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Контракт "{self.object}" успешно создан.')
+        return response
+
 
 class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования контракта."""
@@ -81,9 +102,21 @@ class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного создания.
+        объекта после успешного редактирования.
         """
         return reverse("contracts:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил контракт: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Контракт "{self.object}" успешно обновлен.')
+        return response
 
 
 class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -117,11 +150,21 @@ class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Контракт '{self.object}' (PK={self.object.pk}) был 'мягко' удален (перемещен в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Контракт "{self.object}" успешно перемещен в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления контракта '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как он защищен связанными объектами: {exc.protected_objects}"
+            )
             messages.error(self.request, "Этот контракт нельзя удалить, так как он привязан к истории клиента.")
+
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("contracts:detail", kwargs={"pk": self.object.pk}))

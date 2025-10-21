@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.db import models
+from django_clamd.validators import validate_file_infection
 
 from apps.common.models import BaseModel
 from apps.common.utils import create_dynamic_upload_path
@@ -38,20 +39,23 @@ class Contract(BaseModel):
         null=True,
         verbose_name="Файл с документом",
         validators=[
-            # Разрешаем только определенные типы файлов
+            # Разрешаем только определенные типы файлов.
             FileExtensionValidator(allowed_extensions=["pdf", "doc", "docx", "jpg", "jpeg", "png"]),
-            # Валидатор размера файла
+            # Валидатор размера файла.
             validate_document_size,
+            # Антивирусный сканер.
+            validate_file_infection,
         ],
     )
     amount = models.DecimalField(
         max_digits=12,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         decimal_places=2,
         verbose_name="Сумма",
         validators=[MinValueValidator(Decimal("0.00"))],  # Сумма не может быть отрицательной
     )
-    start_date = models.DateField(verbose_name="Дата заключения")
-    end_date = models.DateField(verbose_name="Дата окончания")
+    start_date = models.DateField(db_index=True, verbose_name="Дата заключения")
+    end_date = models.DateField(db_index=True, verbose_name="Дата окончания")
 
     # Явная аннотация для обратной связи.
     # PyCharm и mypy теперь знают, что у `Contract` есть

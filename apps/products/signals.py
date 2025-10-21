@@ -2,6 +2,7 @@
 Сигналы для приложения products.
 """
 
+import logging
 from typing import Any
 
 from django.db.models import ProtectedError
@@ -9,6 +10,9 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 from .models import Service
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.products")
 
 
 @receiver(pre_delete, sender=Service)
@@ -33,6 +37,12 @@ def prevent_hard_delete_service_with_campaigns(sender: type[Service], instance: 
 
     # Если queryset не пустой, значит, связанные объекты существуют.
     if active_campaigns.exists():
+        # Логируем заблокированное действие.
+        logger.warning(
+            f"Сигнал: Заблокирована попытка физического удаления услуги '{instance}' (PK={instance.pk}), "
+            f"так как она защищена активными рекламными кампаниями: {[campaign.pk for campaign in active_campaigns]}."
+        )
+
         # Выбрасываем исключение ProtectedError. Django Admin умеет красиво его
         # обрабатывать, показывая пользователю список защищенных объектов.
         raise ProtectedError(

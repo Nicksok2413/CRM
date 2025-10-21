@@ -2,11 +2,13 @@
 Представления (Views) для приложения products.
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
@@ -14,6 +16,9 @@ from django_filters.views import FilterView
 from .filters import ServiceFilter
 from .forms import ServiceForm
 from .models import Service
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.products")
 
 
 class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -54,6 +59,18 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         """
         return reverse("products:detail", kwargs={"pk": self.object.pk})
 
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал новую услугу: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Услуга "{self.object}" успешно создана.')
+        return response
+
 
 class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """Представление для редактирования услуги."""
@@ -70,6 +87,18 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         объекта после успешного редактирования.
         """
         return reverse("products:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' обновил услугу: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Услуга "{self.object}" успешно обновлена.')
+        return response
 
 
 class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -104,13 +133,23 @@ class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Услуга '{self.object}' (PK={self.object.pk}) была 'мягко' удалена (перемещена в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Услуга "{self.object}" успешно перемещена в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления услуги '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как она защищена связанными объектами: {exc.protected_objects}"
+            )
             messages.error(
                 self.request, "Эту услугу нельзя удалить, так как она используется в активных рекламных кампаниях."
             )
+
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("products:detail", kwargs={"pk": self.object.pk}))

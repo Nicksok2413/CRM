@@ -2,20 +2,31 @@
 Представления (Views) для приложения leads.
 """
 
+import logging
+from datetime import timedelta
+from typing import cast
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import ProtectedError, QuerySet
+from django.db.models import Count, ProtectedError, QuerySet
+from django.db.models.functions import TruncDay
 from django.forms.models import BaseModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
+from apps.customers.models import ActiveClient
+
 from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
+
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.leads")
 
 
 class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
@@ -37,7 +48,10 @@ class LeadListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
         select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
         """
         # queryset будет содержать лидов + данные по их рекламным кампаниям
-        return super().get_queryset().select_related("ad_campaign")
+        queryset = super().get_queryset().select_related("ad_campaign")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[PotentialClient], queryset)
 
 
 class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -59,7 +73,10 @@ class LeadDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         позволит получить все три сущности (Лид, Кампания, Услуга) одним запросом.
         """
         # queryset будет содержать лида + данные по РК + данные по услуге
-        return super().get_queryset().select_related("ad_campaign__service")
+        queryset = super().get_queryset().select_related("ad_campaign__service")
+
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        return cast(QuerySet[PotentialClient], queryset)
 
 
 class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
@@ -75,9 +92,21 @@ class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     def get_success_url(self) -> str:
         """
         Переопределяем метод для перенаправления на детальную страницу
-        объекта после успешного редактирования.
+        объекта после успешного создания.
         """
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного создания объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(
+            f"Пользователь '{self.request.user.username}' создал нового лида: '{self.object}' (PK={self.object.pk})."
+        )
+        messages.success(self.request, f'Лид "{self.object}" успешно создан.')
+        return response
 
 
 class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
@@ -96,6 +125,16 @@ class LeadUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         объекта после успешного редактирования.
         """
         return reverse("leads:detail", kwargs={"pk": self.object.pk})
+
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """
+        Переопределяем метод для логирования успешного редактирования объекта.
+        """
+        response = super().form_valid(form)
+
+        logger.info(f"Пользователь '{self.request.user.username}' обновил лида: '{self.object}' (PK={self.object.pk}).")
+        messages.success(self.request, f'Лид "{self.object}" успешно обновлен.')
+        return response
 
 
 class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -119,22 +158,32 @@ class LeadDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         """
         try:
             # Проверяем историю контрактов лида.
-            history = self.object.contracts_history.all_objects.all()
+            contracts_history = ActiveClient.all_objects.filter(potential_client=self.object)
 
-            if history.exists():
+            if contracts_history.exists():
                 raise ProtectedError(
                     "Невозможно удалить лида: у него есть история контрактов.",
-                    set(history),
+                    set(contracts_history),
                 )
 
             # Если проверка пройдена, выполняем "мягкое" удаление.
             self.object.soft_delete()
+
+            logger.info(
+                f"Лид '{self.object}' (PK={self.object.pk}) был 'мягко' удален (перемещен в архив) "
+                f"пользователем '{self.request.user.username}'."
+            )
             messages.success(self.request, f'Лид "{self.object}" успешно перемещен в архив.')
             return HttpResponseRedirect(self.get_success_url())
 
-        except ProtectedError:
-            # Если поймали ошибку, показываем пользователю сообщение.
+        except ProtectedError as exc:
+            # Если поймали ошибку, логируем и показываем пользователю сообщение.
+            logger.warning(
+                f"Заблокирована попытка удаления лида '{self.object}' (PK={self.object.pk}) "
+                f"пользователем '{self.request.user.username}', так как он защищен связанными объектами: {exc.protected_objects}"
+            )
             messages.error(self.request, "Этого лида нельзя удалить, так как у него есть история контрактов.")
+
             # Возвращаем пользователя на детальную страницу.
             return HttpResponseRedirect(reverse("leads:detail", kwargs={"pk": self.object.pk}))
 
@@ -147,8 +196,9 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     permission_required = "leads.change_potentialclient"
 
-    def post(self, request, pk, status):
+    def post(self, request: HttpRequest, pk: int, status: str) -> HttpResponse:
         lead = get_object_or_404(PotentialClient, pk=pk)
+        old_status = lead.get_status_display()  # Запоминаем старый статус для лога
 
         # Проверяем, что переданный статус валиден
         valid_statuses = [status[0] for status in PotentialClient.Status.choices]
@@ -156,9 +206,61 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
         if status in valid_statuses:
             lead.status = status
             lead.save(update_fields=["status"])
+
+            logger.info(
+                f"Статус лида '{lead}' (PK={pk}) изменен с '{old_status}' на '{lead.get_status_display()}' "
+                f"пользователем '{request.user.username}'."
+            )
             messages.success(request, f'Статус клиента "{lead}" изменен на "{lead.get_status_display()}".')
         else:
+            logger.error(
+                f"Попытка установить некорректный статус '{status}' для лида с PK={pk} "
+                f"пользователем '{request.user.username}'."
+            )
             messages.error(request, "Некорректный статус.")
 
         # Возвращаемся на детальную страницу лида
         return redirect("leads:detail", pk=lead.pk)
+
+
+def get_lead_creation_stats(request: HttpRequest) -> JsonResponse:
+    """
+    API-endpoint, возвращающий статистику создания лидов
+    за последние 30 дней в формате JSON.
+    """
+
+    # Проверяем аутентификацию пользователя.
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=403)
+
+    # Определяем диапазон дат.
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+
+    # Выполняем "тяжелый" запрос к БД.
+    # Группируем лидов по дню создания и считаем их количество.
+    stats_from_db = (
+        PotentialClient.objects.filter(created_at__gte=thirty_days_ago)
+        .annotate(day=TruncDay("created_at"))
+        .values("day")
+        .annotate(count=Count("id"))
+        .order_by("day")
+    )
+
+    # Создаем словарь для быстрого поиска: {дата: количество}
+    stats_dict = {stat["day"].date(): stat["count"] for stat in stats_from_db}
+
+    # Генерируем полный список дат за последние 30 дней.
+    today = timezone.now().date()
+    date_range = [today - timedelta(days=i) for i in range(29, -1, -1)]
+
+    # Форматируем данные для Chart.js, подставляя 0 там, где не было лидов.
+    # Нам нужны два массива: labels (даты) и data (количества).
+    labels = [day.strftime("%d-%m") for day in date_range]
+    data = [stats_dict.get(day, 0) for day in date_range]
+
+    response_data = {
+        "labels": labels,
+        "data": data,
+    }
+
+    return JsonResponse(response_data)

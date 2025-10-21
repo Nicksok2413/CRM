@@ -9,13 +9,15 @@
 from typing import Any
 
 from django import template
+from django.core.paginator import Page
+from django.http import HttpRequest
 
 # Создаем экземпляр Library, чтобы зарегистрировать наши теги.
 register = template.Library()
 
 
 @register.simple_tag(takes_context=True)
-def query_transform(context, **kwargs: Any):
+def query_transform(context: dict[str, Any], **kwargs: Any) -> str:
     """
     Кастомный тег для модификации GET-параметров текущего URL.
 
@@ -39,7 +41,7 @@ def query_transform(context, **kwargs: Any):
     """
 
     # Получаем request из контекста.
-    request = context["request"]
+    request: HttpRequest = context["request"]
 
     # Копируем текущие GET-параметры, чтобы не изменять исходный объект.
     updated_params = request.GET.copy()
@@ -58,7 +60,7 @@ def query_transform(context, **kwargs: Any):
 
 
 @register.inclusion_tag("common/pagination.html", takes_context=True)
-def render_pagination(context, page_obj, page_range_window=2):
+def render_pagination(context: dict[str, Any], page_obj: Page, page_range_window: int = 2) -> dict[str, Any]:
     """
     Рендерит HTML-блок с продвинутой пагинацией.
 
@@ -84,7 +86,7 @@ def render_pagination(context, page_obj, page_range_window=2):
     """
 
     # Получаем request из контекста.
-    request = context["request"]
+    request: HttpRequest = context["request"]
 
     # Вычисляем "окно" страниц для отображения.
     current_page = page_obj.number

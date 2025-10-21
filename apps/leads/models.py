@@ -42,15 +42,15 @@ class PotentialClient(BaseModel):
     )
     last_name = models.CharField(
         max_length=100,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         verbose_name="Фамилия",
         validators=[validate_letters_and_hyphens],  # Валидатор для фамилии
     )
-    email = models.EmailField(unique=True, verbose_name="Email")
+    email = models.EmailField(verbose_name="Email")
     phone = models.CharField(
         max_length=20,
         blank=True,
         null=True,  # Разрешаем хранить в БД NULL вместо пустой строки
-        unique=True,  # Безопасно добавляем уникальность
         verbose_name="Телефон",
         validators=[validate_international_phone_number],  # Валидатор для телефона
         help_text="Введите номер в любом удобном формате, включая международный.",
@@ -58,6 +58,7 @@ class PotentialClient(BaseModel):
 
     status = models.CharField(
         max_length=20,
+        db_index=True,  # Для ускорения операций фильтрации и сортировки
         choices=Status.choices,  # Используем определенные статусы
         default=Status.NEW,  # По умолчанию каждый новый лид - "Новый"
         verbose_name="Статус",
@@ -114,3 +115,22 @@ class PotentialClient(BaseModel):
         verbose_name = "Потенциальный клиент"
         verbose_name_plural = "Потенциальные клиенты"
         ordering = ["-created_at"]
+
+        # Добавляем кастомные ограничения.
+        constraints = [
+            # Уникальность для email.
+            # Поле `email` должно быть уникальным только для тех записей,
+            # у которых is_deleted=False (т.е. тех, которые не были 'мягко удалены').
+            models.UniqueConstraint(
+                fields=["email"], condition=models.Q(is_deleted=False), name="unique_active_lead_email"
+            ),
+            # Уникальность для телефона.
+            # Поле `phone` должно быть уникальным только для тех записей,
+            # у которых is_deleted=False (т.е. тех, которые не были 'мягко удалены').
+            # `nulls_not_distinct=True` (для PostgreSQL) может понадобиться, если
+            # несколько записей с NULL в телефоне вызовут ошибку.
+            # Но condition=Q(...) обычно решает эту проблему.
+            models.UniqueConstraint(
+                fields=["phone"], condition=models.Q(is_deleted=False), name="unique_active_lead_phone"
+            ),
+        ]

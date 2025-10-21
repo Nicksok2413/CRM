@@ -2,20 +2,24 @@
 Сигналы для приложения customers.
 """
 
+import logging
 from typing import Any
 
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from apps.leads.models import PotentialClient
 
 from .models import ActiveClient
 
+# Получаем логгер для приложения
+logger = logging.getLogger("apps.customers")
 
-@receiver(post_save, sender=ActiveClient)
-def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: ActiveClient, **kwargs: Any):
+
+@receiver(pre_save, sender=ActiveClient)
+def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: ActiveClient, **kwargs: Any) -> None:
     """
-    Сигнал для обновления статуса Лида при "мягком удалении" (деактивации) записи ActiveClient.
+    Сигнал для обновления статуса лида перед "мягком удалением" (деактивации) записи ActiveClient.
 
     Если менеджер деактивирует клиента, его лид автоматически вернется со статусом "В работе".
 
@@ -25,15 +29,35 @@ def update_lead_status_on_deactivation(sender: type[ActiveClient], instance: Act
         **kwargs: Дополнительные аргументы.
     """
 
-    # `update_fields` содержит список полей, которые были изменены.
-    update_fields = kwargs.get("update_fields") or set()
+    # Если у объекта еще нет PK, значит, он только создается. Выходим.
+    if instance.pk is None:
+        return
 
-    # Нас интересует ситуация, когда "мягко" удаляется запись (флаг is_deleted станет True).
-    if instance.is_deleted and "is_deleted" in update_fields:
-        # Получаем связанного лида
+    try:
+        # Получаем "старую" версию объекта из базы данных.
+        old_instance = sender.objects.get(pk=instance.pk)
+    except sender.DoesNotExist:
+        return  # На всякий случай, если объект уже удален.
+
+    # Сравниваем старое и новое значения поля is_deleted.
+    # Нас интересует момент, когда оно меняется с False на True.
+    if not old_instance.is_deleted and instance.is_deleted:
+        # Получаем связанного лида.
         lead = instance.potential_client
+
+        # Логируем, что сигнал сработал.
+        logger.debug(
+            f"Сигнал: Запущен `update_lead_status_on_deactivation` для ActiveClient PK={instance.pk}, "
+            f"связанного с лидом '{lead}' (PK={lead.pk})."
+        )
 
         # Если лид был "Конвертирован", возвращаем его в статус "В работе".
         if lead.status == PotentialClient.Status.CONVERTED:
             lead.status = PotentialClient.Status.IN_PROGRESS
             lead.save(update_fields=["status"])
+
+            # Логируем успешное изменение статуса.
+            logger.info(
+                f"Сигнал: Статус лида '{lead}' (PK={lead.pk}) автоматически изменен на 'В работе' "
+                f"из-за деактивации записи ActiveClient (PK={instance.pk})."
+            )
