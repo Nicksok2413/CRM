@@ -61,8 +61,8 @@ class PotentialClientFactory(factory.django.DjangoModelFactory):
         lambda: random.choice([PotentialClient.Status.NEW, PotentialClient.Status.IN_PROGRESS])
     )
     manager = factory.LazyFunction(
-        # `User.objects.order_by("?").first()` выбирает случайного пользователя из БД.
-        lambda: User.objects.order_by("?").first()
+        # Выбираем случайного пользователя (менеджера) из БД.
+        lambda: User.objects.filter(groups__name="Менеджер").order_by("?").first()
     )
 
 

@@ -218,7 +218,7 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
         lead = get_object_or_404(PotentialClient, pk=pk)
         old_status = lead.get_status_display()  # Запоминаем старый статус для лога
 
-        # Проверяем, что переданный статус валиден
+        # Проверяем, что переданный статус валиден.
         valid_statuses = [status[0] for status in PotentialClient.Status.choices]
 
         if status in valid_statuses:
@@ -237,7 +237,7 @@ class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
             )
             messages.error(request, "Некорректный статус.")
 
-        # Возвращаемся на детальную страницу лида
+        # Возвращаемся на детальную страницу лида.
         return redirect("leads:detail", pk=lead.pk)
 
 
