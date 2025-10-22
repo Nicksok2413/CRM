@@ -51,7 +51,7 @@
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
 
     <div class="hstack gap-3 pb-4">
-        {% if perms.contracts.create_contract %}
+        {% if perms.contracts.add_contract %}
             <a href="{% url 'contracts:create' %}" class="btn btn-success p-2">Создать</a>
         {% endif %}
     </div>

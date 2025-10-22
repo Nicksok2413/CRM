@@ -59,8 +59,8 @@
                     {% endif %}
                 </div>
 
-                <!-- Блок смены статуса (виден только если лид еще не конвертирован и не потерян) -->
-                {% if "change_potentialclient" in lead_perms and (object.status == object.Status.NEW or object.status == object.Status.IN_PROGRESS or object.status == object.Status.LOST) %}
+                <!-- Блок смены статуса (виден только если лид еще не конвертирован) -->
+                {% if "change_potentialclient" in lead_perms and object.status != object.Status.CONVERTED %}
                     <h5 class="text-center mt-4">Действия с лидом</h5>
                     <div class="d-flex justify-content-center gap-2 mt-3">
 

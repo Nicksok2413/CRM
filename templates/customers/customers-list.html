@@ -1,5 +1,6 @@
 {% extends "_base.html" %}
 
+{% load guardian_tags %}
 {% load pagination_tags %}
 
 {% block content %}
@@ -41,6 +42,7 @@
             <thead>
                 <tr>
                     <th>Клиент</th>
+                    <th>Менеджер</th>
                     <th>Услуга</th>
                     <th>Контракт</th>
                     <th>Дата окончания</th>
@@ -52,13 +54,20 @@
                 {% for customer in customers %}
                     <tr>
                         <td>
-                            {% if perms.customers.view_activeclient %}
+                            {# Получаем права на связанный объект лида #}
+                            {% get_obj_perms request.user for customer.potential_client as "lead_perms" %}
+
+                            {# Проверяем право на просмотр лида #}
+                            {% if "view_potentialclient" in lead_perms %}
                                 <a href="{% url 'customers:detail' customer.pk %}">
-                                    {{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}
+                                    {{ customer.potential_client }}
                                 </a>
                             {% else %}
-                                {{ customer.potential_client.last_name }} {{ customer.potential_client.first_name }}
+                                {{ customer.potential_client }}
                             {% endif %}
+                        </td>
+                        <td>
+                            {{ customer.potential_client.manager }}
                         </td>
                         <td>
                             {% if perms.products.view_service %}

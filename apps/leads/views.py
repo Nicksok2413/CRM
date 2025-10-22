@@ -8,6 +8,7 @@ from typing import cast
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, ProtectedError, QuerySet
 from django.db.models.functions import TruncDay
 from django.forms.models import BaseModelForm
@@ -206,17 +207,27 @@ class LeadDeleteView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DeleteVi
             return HttpResponseRedirect(reverse("leads:detail", kwargs={"pk": self.object.pk}))
 
 
-class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class UpdateLeadStatusView(LoginRequiredMixin, View):
     """
     Базовый View для смены статуса лида.
-    Принимает рекламную кампанию лида и новый статус из URL.
+    Принимает id и новый статус из URL.
+    Проверяет объектные права вручную.
     """
 
-    permission_required = "leads.change_potentialclient"
-
     def post(self, request: HttpRequest, pk: int, status: str) -> HttpResponse:
+        # Получаем лида.
         lead = get_object_or_404(PotentialClient, pk=pk)
-        old_status = lead.get_status_display()  # Запоминаем старый статус для лога
+
+        # Проверяем, есть ли у пользователя право 'change_potentialclient' на конкретный объект 'lead'.
+        if not request.user.has_perm("leads.change_potentialclient", lead):
+            logger.warning(
+                f"Пользователь '{request.user.username}' пытался изменить статус лида PK={pk}, не имея на это прав."
+            )
+            # Вызываем ошибку 403.
+            raise PermissionDenied  # <--
+
+        # Запоминаем старый статус для лога.
+        old_status = lead.get_status_display()
 
         # Проверяем, что переданный статус валиден.
         valid_statuses = [status[0] for status in PotentialClient.Status.choices]
