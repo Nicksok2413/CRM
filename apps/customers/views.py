@@ -48,8 +48,8 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
         user = self.request.user
 
         # Получаем базовый queryset с оптимизацией.
-        # Он будет содержать данные активных клиентов + лидов + контрактов и услуг.
-        base_queryset = super().get_queryset().select_related("potential_client", "contract__service")
+        # Он будет содержать данные активных клиентов + лидов и менеджеров + контрактов и услуг.
+        base_queryset = ActiveClient.objects.select_related("potential_client__manager", "contract__service")
 
         # Проверяем, есть ли у пользователя глобальное право на просмотр всех активных клиентов.
         # Это право обычно есть у суперпользователей, администраторов.
