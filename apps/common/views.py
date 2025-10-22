@@ -27,11 +27,12 @@ from guardian.mixins import PermissionRequiredMixin as ObjectPermissionRequiredM
 # ==============================================================================
 
 
-class BaseListView(LoginRequiredMixin, FilterView):
+class BaseListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
     """
     Базовый класс для всех списков с фильтрацией, пагинацией и сортировкой.
 
     - `LoginRequiredMixin`: Требует, чтобы пользователь был аутентифицирован.
+    - `PermissionRequiredMixin`: Требует наличия глобального права на просмотр.
     - `FilterView`: Интегрирует `django-filter` для фильтрации queryset.
     """
 

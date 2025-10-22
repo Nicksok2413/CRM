@@ -6,15 +6,19 @@ import logging
 from typing import Any, cast
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.cache import cache
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
-from django_filters.views import FilterView
 
+from apps.common.views import (
+    BaseCreateView,
+    BaseListView,
+    BaseObjectDeleteView,
+    BaseObjectDetailView,
+    BaseObjectUpdateView,
+)
 from apps.leads.models import PotentialClient
 
 from .filters import AdCampaignFilter
@@ -26,7 +30,7 @@ from .selectors import get_campaigns_with_stats, get_detailed_stats_for_campaign
 logger = logging.getLogger("apps.products")
 
 
-class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class AdCampaignListView(BaseListView):
     """Представление для отображения списка рекламных кампаний с фильтрацией, пагинацией и сортировкой."""
 
     model = AdCampaign
@@ -51,7 +55,7 @@ class AdCampaignListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView
         return cast(QuerySet[AdCampaign], queryset)
 
 
-class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class AdCampaignDetailView(BaseObjectDetailView):
     """Представление для детального просмотра рекламной кампании."""
 
     model = AdCampaign
@@ -66,7 +70,7 @@ class AdCampaignDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         return super().get_queryset().select_related("service")
 
 
-class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class AdCampaignCreateView(BaseCreateView):
     """Представление для создания новой рекламной кампании."""
 
     model = AdCampaign
@@ -95,7 +99,7 @@ class AdCampaignCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVi
         return response
 
 
-class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class AdCampaignUpdateView(BaseObjectUpdateView):
     """Представление для редактирования рекламной кампании."""
 
     model = AdCampaign
@@ -124,7 +128,7 @@ class AdCampaignUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateVi
         return response
 
 
-class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class AdCampaignDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления рекламной кампании."""
 
     model = AdCampaign
@@ -171,7 +175,7 @@ class AdCampaignDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteVi
             return HttpResponseRedirect(reverse("ads:detail", kwargs={"pk": self.object.pk}))
 
 
-class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class AdCampaignStatisticView(BaseListView):
     """
     Представление для отображения статистики по рекламным кампаниям.
     """
@@ -193,14 +197,14 @@ class AdCampaignStatisticView(LoginRequiredMixin, PermissionRequiredMixin, Filte
         return get_campaigns_with_stats()
 
 
-class AdCampaignDetailStatisticView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class AdCampaignDetailStatisticView(BaseObjectDetailView):
     """
     Представление для детальной статистики по одной рекламной кампании.
     Использует кэширование для повышения производительности.
     """
 
     model = AdCampaign
-    template_name = "ads/ads-detail-statistic.html"  # Новый шаблон
+    template_name = "ads/ads-detail-statistic.html"  # Шаблон детальной статистики
     context_object_name = "ad"
     permission_required = "advertisements.view_adcampaign"
 

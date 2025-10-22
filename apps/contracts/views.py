@@ -6,13 +6,18 @@ import logging
 from typing import cast
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError, QuerySet
 from django.forms.models import BaseModelForm
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
-from django_filters.views import FilterView
+
+from apps.common.views import (
+    BaseCreateView,
+    BaseListView,
+    BaseObjectDeleteView,
+    BaseObjectDetailView,
+    BaseObjectUpdateView,
+)
 
 from .filters import ContractFilter
 from .forms import ContractForm
@@ -22,7 +27,7 @@ from .models import Contract
 logger = logging.getLogger("apps.contracts")
 
 
-class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class ContractListView(BaseListView):
     """Представление для отображения списка контрактов с фильтрацией, пагинацией и сортировкой."""
 
     model = Contract
@@ -46,7 +51,7 @@ class ContractListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
         return cast(QuerySet[Contract], queryset)
 
 
-class ContractDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class ContractDetailView(BaseObjectDetailView):
     """Представление для детального просмотра контракта."""
 
     model = Contract
@@ -61,7 +66,7 @@ class ContractDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView
         return super().get_queryset().select_related("service")
 
 
-class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ContractCreateView(BaseCreateView):
     """Представление для создания нового контракта."""
 
     model = Contract
@@ -90,7 +95,7 @@ class ContractCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         return response
 
 
-class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ContractUpdateView(BaseObjectUpdateView):
     """Представление для редактирования контракта."""
 
     model = Contract
@@ -119,7 +124,7 @@ class ContractUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
         return response
 
 
-class ContractDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ContractDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления контракта."""
 
     model = Contract
