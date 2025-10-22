@@ -17,11 +17,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
+from django_filters.views import FilterView
 from guardian.shortcuts import get_objects_for_user
 
 from apps.common.views import (
     BaseCreateView,
-    BaseListView,
     BaseObjectDeleteView,
     BaseObjectDetailView,
     BaseObjectUpdateView,
@@ -36,8 +36,12 @@ from .models import PotentialClient
 logger = logging.getLogger("apps.leads")
 
 
-class LeadListView(BaseListView):
-    """Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой."""
+class LeadListView(LoginRequiredMixin, FilterView):
+    """
+    Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой.
+
+    Имеет кастомную логику queryset для учета прав доступа.
+    """
 
     model = PotentialClient
     template_name = "leads/leads-list.html"
@@ -50,8 +54,9 @@ class LeadListView(BaseListView):
 
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
-        Переопределяем queryset для оптимизации и чтобы он учитывал объектные права.
-        select_related подгружает связанные рекламные кампании и менеджера одним запросом, избегая проблемы "N+1".
+        Возвращает queryset, отфильтрованный в соответствии с правами пользователя.
+        - Пользователи с глобальным правом `view_potentialclient` видят всех.
+        - Остальные (Менеджеры) видят только их лидов.
         """
         # Получаем пользователя из запроса.
         user = self.request.user
@@ -69,12 +74,6 @@ class LeadListView(BaseListView):
         # Если глобального права нет, возвращаем только те объекты,
         # на которые у пользователя есть объектное право.
         return get_objects_for_user(user, "leads.view_potentialclient", klass=base_queryset)
-
-        # # queryset будет содержать лидов + данные по их рекламным кампаниям
-        # queryset = super().get_queryset().select_related("ad_campaign")
-        #
-        # # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
-        # return cast(QuerySet[PotentialClient], queryset)
 
 
 class LeadDetailView(BaseObjectDetailView):
