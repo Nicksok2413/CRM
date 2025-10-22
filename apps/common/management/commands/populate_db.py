@@ -206,3 +206,5 @@ class Command(BaseCommand):
             # Создаем контракт для случайной услуги.
             service = random.choice(all_services)
             free_contracts.append(ContractFactory.create(service=service))
+
+        self.stdout.write(self.style.SUCCESS("База данных успешно наполнена!"))
