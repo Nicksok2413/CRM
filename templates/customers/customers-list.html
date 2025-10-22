@@ -67,7 +67,11 @@
                             {% endif %}
                         </td>
                         <td>
-                            {{ customer.potential_client.manager }}
+                            {% if customer.potential_client.manager %}
+                                {{ customer.potential_client.manager }}
+                            {% else %}
+                                -
+                            {% endif %}
                         </td>
                         <td>
                             {% if perms.products.view_service %}

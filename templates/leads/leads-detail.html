@@ -20,7 +20,7 @@
 
                 <!-- ================== ЗАГОЛОВОК И СТАТУС В ОДНУ СТРОКУ ================== -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title fw-bold mb-0">{{ object.last_name }} {{ object.first_name }}</h5>
+                    <h5 class="card-title fw-bold mb-0">{{ object }}</h5>
 
                     {% if object.status == object.Status.NEW %}
                         <span class="badge bg-primary fs-6">{{ object.get_status_display }}</span>
