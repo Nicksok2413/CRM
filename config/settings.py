@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Приложения.
+    # === Приложения ===
     "apps.advertisements.apps.AdvertisementsConfig",
     "apps.common.apps.CommonConfig",
     "apps.contracts.apps.ContractsConfig",
@@ -68,8 +68,13 @@ INSTALLED_APPS = [
     "apps.leads.apps.LeadsConfig",
     "apps.products.apps.ProductsConfig",
     "apps.users.apps.UsersConfig",
-    # Сторонние приложения.
+    # === Сторонние приложения ===
+    # Стилизация форм
+    "crispy_bootstrap5",
+    "crispy_forms",
+    # Фильтрация
     "django_filters",
+    # Объектные права доступа
     "guardian",
 ]
 
@@ -392,6 +397,14 @@ LOGIN_REDIRECT_URL = "/"
 
 # URL, на который пользователь будет перенаправлен после выхода.
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+
+# ======================================================================
+# НАСТРОЙКИ CRISPY FORMS
+# ======================================================================
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 
 # ======================================================================

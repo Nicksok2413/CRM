@@ -4,15 +4,20 @@
 
 # Веб-фреймворк
 Django==5.2.7
-django-filter==25.2  # Фильтрация
-django-guardian==3.2.0  # Объектные права доступа
+# Фильтрация
+django-filter==25.2
+# Объектные права доступа
+django-guardian==3.2.0
+# Стилизация форм
+django-crispy-forms==2.4
+crispy-bootstrap5==2025.6
+
+# Веб-сервер
+# gunicorn
 
 # Кэширование
 django-redis==6.0.0
 redis==6.4.0
-
-# Веб-сервер
-# gunicorn
 
 # Драйвер PostgreSQL
 psycopg[binary]==3.2.11
@@ -30,4 +35,4 @@ phonenumberslite==9.0.16
 django-clamd==1.0.0
 
 # Мониторинг
-sentry-sdk[django]==2.42.0
+sentry-sdk[django]==2.42.1

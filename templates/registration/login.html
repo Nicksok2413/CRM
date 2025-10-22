@@ -1,16 +1,18 @@
 {% extends "_base.html" %}
+{% load crispy_forms_tags %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card my-5">
-            <div class="card-header text-center">
+    <div class="col-md-5"> {# Уменьшим ширину для лучшего вида #}
+        <div class="card my-5 shadow">
+            <div class="card-header text-center bg-primary text-white">
                 <h3>Вход в CRM</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4"> {# Добавим отступы #}
                 <form method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <div class="d-grid">
+                    {{ form|crispy }} {# <-- Используем фильтр crispy #}
+                    <div class="d-grid mt-4">
                         <button type="submit" class="btn btn-primary">Войти</button>
                     </div>
                 </form>
