@@ -36,6 +36,7 @@
             <tr>
                 <th>ФИО</th>
                 <th>Email</th>
+                <th>Контракт</th>
                 <th class="text-center">Статус контракта</th>
                 <th class="text-end">Сумма контракта</th>
             </tr>
@@ -54,6 +55,9 @@
 
                 <!-- Email -->
                 <td>{{ lead.email }}</td>
+
+                <!-- Контракт -->
+                <td>{{ lead.active_contract.contract }}</td>
 
                 <!-- Статус контракта -->
                 <td class="text-center">
