@@ -61,7 +61,12 @@
 
                 <!-- Статус контракта -->
                 <td class="text-center">
-                    {% if lead.active_contract %}
+                    {# Проверяем статус лида #}
+                    {% if lead.status == lead.Status.LOST %}
+                        <span class="badge bg-secondary">Потерян</span>
+
+                    {# Если лид не "Потерян", то смотрим статус контракта #}
+                    {% elif lead.active_contract %}
                         <span class="badge bg-success">Активный</span>
                     {% elif lead.contracts_history.exists %}
                         <span class="badge bg-secondary">Архивный</span>
