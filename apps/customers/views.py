@@ -25,13 +25,13 @@ from .models import ActiveClient
 logger = logging.getLogger("apps.customers")
 
 
-class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class ActiveClientListView(LoginRequiredMixin, FilterView):
     """Представление для отображения списка всех активных клиентов с фильтрацией, пагинацией и сортировкой."""
 
     model = ActiveClient
     template_name = "customers/customers-list.html"
     context_object_name = "customers"
-    permission_required = "customers.view_activeclient"
+    # permission_required = "customers.view_activeclient"
 
     # Подключаем класс фильтра.
     filterset_class = ActiveClientFilter

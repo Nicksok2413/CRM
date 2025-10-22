@@ -1,5 +1,7 @@
 {% extends "_base.html" %}
 
+{% load guardian_tags %}
+
 {% block content %}
 <h2 class="fw-bold">Детальная информация о лиде</h2>
 <div class="row bg-white px-3 py-3 mx-2 my-5 rounded pb-5 shadow-lg">
@@ -12,6 +14,9 @@
     <div class="col-6"> <!-- Увеличим ширину центральной колонки для лучшего вида -->
         <div class="card border-dark shadow" style="background: #eee">
             <div class="card-body">
+
+                {# Получаем объектные права для этого лида #}
+                {% get_obj_perms request.user for object as "lead_perms" %}
 
                 <!-- ================== ЗАГОЛОВОК И СТАТУС В ОДНУ СТРОКУ ================== -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -44,30 +49,31 @@
 
                 <!-- Блок основных действий -->
                 <div class="d-flex justify-content-center gap-2 mt-4">
-                    {% if perms.leads.change_potentialclient %}
+                    {# Проверяем объектное право на изменение #}
+                    {% if "change_potentialclient" in lead_perms %}
                         <a href="{% url 'leads:edit' object.pk %}" class="btn btn-primary">Редактировать</a>
                     {% endif %}
-                    {% if perms.leads.delete_potentialclient %}
+                    {# Проверяем объектное право на удаление #}
+                    {% if "delete_potentialclient" in lead_perms %}
                         <a href="{% url 'leads:delete' object.pk %}" class="btn btn-danger">Удалить</a>
                     {% endif %}
                 </div>
 
                 <!-- Блок смены статуса (виден только если лид еще не конвертирован и не потерян) -->
-                {% if object.status == object.Status.NEW or object.status == object.Status.IN_PROGRESS or object.status == object.Status.LOST %}
+                {% if "change_potentialclient" in lead_perms and (object.status == object.Status.NEW or object.status == object.Status.IN_PROGRESS or object.status == object.Status.LOST) %}
                     <h5 class="text-center mt-4">Действия с лидом</h5>
                     <div class="d-flex justify-content-center gap-2 mt-3">
 
                         {% if object.status == object.Status.NEW %}
                             <!-- Если статус "Новый", предлагаем "Взять в работу" -->
-                            {% if perms.leads.change_potentialclient %}
-                                <form method="post" action="{% url 'leads:update_status' pk=object.pk status='IN_PROGRESS' %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning btn-sm">Взять в работу</button>
-                                </form>
-                            {% endif %}
+                            <form method="post" action="{% url 'leads:update_status' pk=object.pk status='IN_PROGRESS' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm">Взять в работу</button>
+                            </form>
 
                         {% elif object.status == object.Status.IN_PROGRESS %}
                             <!-- Если статус "В работе", предлагаем "Активировать" -->
+                            {# Проверяем право на создание активного клиента, оно глобальное #}
                             {% if perms.customers.add_activeclient %}
                                 <a href="{% url 'customers:create_from_lead' object.pk %}" class="btn btn-info btn-sm">
                                     Активировать клиента
@@ -76,23 +82,19 @@
 
                         {% elif object.status == object.Status.LOST %}
                             <!-- Если статус "Потерян", предлагаем "Вернуть в работу" -->
-                            {% if perms.leads.change_potentialclient %}
-                                <form method="post" action="{% url 'leads:update_status' pk=object.pk status='IN_PROGRESS' %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-success btn-sm">Вернуть в работу</button>
-                                </form>
-                            {% endif %}
+                            <form method="post" action="{% url 'leads:update_status' pk=object.pk status='IN_PROGRESS' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">Вернуть в работу</button>
+                            </form>
 
                         {% endif %}
 
                         <!-- Кнопка "Клиент потерян" видна всегда, пока он не конвертирован -->
                         {% if object.status == object.Status.NEW or object.status == object.Status.IN_PROGRESS %}
-                            {% if perms.leads.change_potentialclient %}
                             <form method="post" action="{% url 'leads:update_status' pk=object.pk status='LOST' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-secondary btn-sm">Клиент потерян</button>
                             </form>
-                            {% endif %}
                         {% endif %}
 
                     </div>

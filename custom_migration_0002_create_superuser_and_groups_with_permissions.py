@@ -53,7 +53,6 @@ ROLES_PERMISSIONS = {
             "add_activeclient",
             "change_activeclient",
             "delete_activeclient",
-            "view_activeclient",
         ],
     },
     # Администратор получает все права через флаг is_superuser.
