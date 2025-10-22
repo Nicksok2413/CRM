@@ -1,0 +1,11 @@
+{% extends "_base.html" %}
+{% block content %}
+<div class="text-center my-5">
+    <h1 class="display-1 fw-bold">403</h1>
+    <p class="fs-3"> <span class="text-danger">Отказано в доступе!</span></p>
+    <p class="lead">
+        К сожалению, у вас нет прав для просмотра этой страницы.
+    </p>
+    <a href="{% url 'users:index' %}" class="btn btn-primary">Вернуться на главную</a>
+</div>
+{% endblock %}
