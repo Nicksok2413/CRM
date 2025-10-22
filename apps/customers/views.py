@@ -15,6 +15,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
+from apps.common.mixins import CheckLeadPermissionMixin
 from apps.leads.models import PotentialClient
 
 from .filters import ActiveClientFilter
@@ -66,12 +67,11 @@ class ActiveClientListView(LoginRequiredMixin, FilterView):
         # return cast(QuerySet[ActiveClient], queryset)
 
 
-class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class ActiveClientDetailView(CheckLeadPermissionMixin, LoginRequiredMixin, DetailView):
     """Представление для детального просмотра активного клиента."""
 
     model = ActiveClient
     template_name = "customers/customers-detail.html"
-    permission_required = "customers.view_activeclient"
 
     def get_queryset(self) -> QuerySet[ActiveClient]:
         """
@@ -82,7 +82,7 @@ class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, Detail
         return super().get_queryset().select_related("potential_client", "contract")
 
 
-class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ActiveClientUpdateView(CheckLeadPermissionMixin, LoginRequiredMixin, UpdateView):
     """
     Представление для редактирования записи об активном клиенте.
     Позволяет привязать клиента к другому контракту.
@@ -92,7 +92,6 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     object: ActiveClient  # Явная аннотация для mypy
     form_class = ActiveClientUpdateForm  # Используем специальную форму для редактирования
     template_name = "customers/customers-edit.html"
-    permission_required = "customers.change_activeclient"
 
     def get_success_url(self) -> str:
         """
@@ -114,7 +113,7 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         return response
 
 
-class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ActiveClientDeleteView(CheckLeadPermissionMixin, LoginRequiredMixin, DeleteView):
     """
     Представление для "мягкого" удаления записи об активном клиенте.
     Деактивирует клиента, но не удаляет его данные из системы.
@@ -123,7 +122,6 @@ class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Delete
     model = ActiveClient
     template_name = "customers/customers-delete.html"
     success_url = reverse_lazy("customers:list")
-    permission_required = "customers.delete_activeclient"
 
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """

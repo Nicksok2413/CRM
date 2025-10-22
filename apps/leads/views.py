@@ -223,8 +223,8 @@ class UpdateLeadStatusView(LoginRequiredMixin, View):
             logger.warning(
                 f"Пользователь '{request.user.username}' пытался изменить статус лида PK={pk}, не имея на это прав."
             )
-            # Вызываем ошибку 403.
-            raise PermissionDenied  # <--
+            # Если прав нет - вызываем ошибку 403.
+            raise PermissionDenied
 
         # Запоминаем старый статус для лога.
         old_status = lead.get_status_display()
