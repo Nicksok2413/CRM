@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Any, cast
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -15,6 +15,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
 
+from apps.common.mixins import CheckLeadPermissionMixin
 from apps.leads.models import PotentialClient
 
 from .filters import ActiveClientFilter
@@ -25,13 +26,16 @@ from .models import ActiveClient
 logger = logging.getLogger("apps.customers")
 
 
-class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
-    """Представление для отображения списка всех активных клиентов с фильтрацией, пагинацией и сортировкой."""
+class ActiveClientListView(LoginRequiredMixin, FilterView):
+    """
+    Представление для отображения списка всех активных клиентов с фильтрацией, пагинацией и сортировкой.
+
+    Имеет кастомную логику queryset для учета прав доступа.
+    """
 
     model = ActiveClient
     template_name = "customers/customers-list.html"
     context_object_name = "customers"
-    permission_required = "customers.view_activeclient"
 
     # Подключаем класс фильтра.
     filterset_class = ActiveClientFilter
@@ -40,22 +44,32 @@ class ActiveClientListView(LoginRequiredMixin, PermissionRequiredMixin, FilterVi
 
     def get_queryset(self) -> QuerySet[ActiveClient]:
         """
-        Переопределяем queryset для оптимизации.
-        select_related подгружает данные из двух связанных моделей
-        (лида и контракта) одним запросом, избегая проблемы "N+1".
+        Возвращает queryset, отфильтрованный в соответствии с правами пользователя.
+        - Пользователи с глобальным правом `view_activeclient` видят всех.
+        - Остальные (Менеджеры) видят только клиентов, привязанных к их лидам.
         """
-        queryset = super().get_queryset().select_related("potential_client", "contract__service")
+        # Получаем пользователя из запроса.
+        user = self.request.user
 
-        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе.
-        return cast(QuerySet[ActiveClient], queryset)
+        # Получаем базовый queryset с оптимизацией.
+        # Он будет содержать данные активных клиентов + лидов и менеджеров + контрактов и услуг.
+        base_queryset = ActiveClient.objects.select_related("potential_client__manager", "contract__service")
+
+        # Проверяем, есть ли у пользователя глобальное право на просмотр всех активных клиентов.
+        # Это право обычно есть у суперпользователей, администраторов.
+        if user.has_perm("customers.view_activeclient"):
+            # Если право есть - возвращаем всех активных клиентов.
+            return base_queryset
+
+        # # Если глобального права нет - фильтруем по полю manager у связанного лида.
+        return base_queryset.filter(potential_client__manager=user)
 
 
-class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class ActiveClientDetailView(LoginRequiredMixin, CheckLeadPermissionMixin, DetailView):
     """Представление для детального просмотра активного клиента."""
 
     model = ActiveClient
     template_name = "customers/customers-detail.html"
-    permission_required = "customers.view_activeclient"
 
     def get_queryset(self) -> QuerySet[ActiveClient]:
         """
@@ -66,7 +80,7 @@ class ActiveClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, Detail
         return super().get_queryset().select_related("potential_client", "contract")
 
 
-class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ActiveClientUpdateView(LoginRequiredMixin, CheckLeadPermissionMixin, UpdateView):
     """
     Представление для редактирования записи об активном клиенте.
     Позволяет привязать клиента к другому контракту.
@@ -76,7 +90,6 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     object: ActiveClient  # Явная аннотация для mypy
     form_class = ActiveClientUpdateForm  # Используем специальную форму для редактирования
     template_name = "customers/customers-edit.html"
-    permission_required = "customers.change_activeclient"
 
     def get_success_url(self) -> str:
         """
@@ -98,7 +111,7 @@ class ActiveClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         return response
 
 
-class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ActiveClientDeleteView(LoginRequiredMixin, CheckLeadPermissionMixin, DeleteView):
     """
     Представление для "мягкого" удаления записи об активном клиенте.
     Деактивирует клиента, но не удаляет его данные из системы.
@@ -107,7 +120,6 @@ class ActiveClientDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Delete
     model = ActiveClient
     template_name = "customers/customers-delete.html"
     success_url = reverse_lazy("customers:list")
-    permission_required = "customers.delete_activeclient"
 
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
         """

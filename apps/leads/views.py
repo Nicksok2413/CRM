@@ -7,7 +7,8 @@ from datetime import timedelta
 from typing import cast
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, ProtectedError, QuerySet
 from django.db.models.functions import TruncDay
 from django.forms.models import BaseModelForm
@@ -16,11 +17,15 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
 from django_filters.views import FilterView
-from guardian.mixins import PermissionRequiredMixin as ObjectPermissionRequiredMixin
 from guardian.shortcuts import get_objects_for_user
 
+from apps.common.views import (
+    BaseCreateView,
+    BaseObjectDeleteView,
+    BaseObjectDetailView,
+    BaseObjectUpdateView,
+)
 from apps.customers.models import ActiveClient
 
 from .filters import LeadFilter
@@ -32,7 +37,11 @@ logger = logging.getLogger("apps.leads")
 
 
 class LeadListView(LoginRequiredMixin, FilterView):
-    """Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой."""
+    """
+    Представление для отображения списка лидов с фильтрацией, пагинацией и сортировкой.
+
+    Имеет кастомную логику queryset для учета прав доступа.
+    """
 
     model = PotentialClient
     template_name = "leads/leads-list.html"
@@ -45,15 +54,16 @@ class LeadListView(LoginRequiredMixin, FilterView):
 
     def get_queryset(self) -> QuerySet[PotentialClient]:
         """
-        Переопределяем queryset для оптимизации и чтобы он учитывал объектные права.
-        select_related подгружает связанные рекламные кампании одним запросом, избегая проблемы "N+1".
+        Возвращает queryset, отфильтрованный в соответствии с правами пользователя.
+        - Пользователи с глобальным правом `view_potentialclient` видят всех.
+        - Остальные (Менеджеры) видят только их лидов.
         """
         # Получаем пользователя из запроса.
         user = self.request.user
 
         # Получаем базовый queryset с оптимизацией.
-        # Он будет содержать лидов + данные по их рекламным кампаниям.
-        base_queryset = PotentialClient.objects.select_related("ad_campaign")
+        # Он будет содержать лидов + данные по их рекламным кампаниям + менеджера.
+        base_queryset = PotentialClient.objects.select_related("ad_campaign", "manager")
 
         # Проверяем, есть ли у пользователя глобальное право на просмотр всех лидов.
         # Это право обычно есть у суперпользователей, администраторов.
@@ -65,14 +75,8 @@ class LeadListView(LoginRequiredMixin, FilterView):
         # на которые у пользователя есть объектное право.
         return get_objects_for_user(user, "leads.view_potentialclient", klass=base_queryset)
 
-        # # queryset будет содержать лидов + данные по их рекламным кампаниям
-        # queryset = super().get_queryset().select_related("ad_campaign")
-        #
-        # # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
-        # return cast(QuerySet[PotentialClient], queryset)
 
-
-class LeadDetailView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DetailView):
+class LeadDetailView(BaseObjectDetailView):
     """Представление для детального просмотра лида."""
 
     model = PotentialClient
@@ -97,14 +101,13 @@ class LeadDetailView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DetailVi
         return cast(QuerySet[PotentialClient], queryset)
 
 
-class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class LeadCreateView(BaseCreateView):
     """Представление для создания нового лида."""
 
     model = PotentialClient
     object: PotentialClient  # Явная аннотация для mypy
     form_class = PotentialClientForm
     template_name = "leads/leads-create.html"
-    # Право на добавление будет только у Оператора
     permission_required = "leads.add_potentialclient"
 
     def get_success_url(self) -> str:
@@ -127,14 +130,13 @@ class LeadCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
         return response
 
 
-class LeadUpdateView(LoginRequiredMixin, ObjectPermissionRequiredMixin, UpdateView):
+class LeadUpdateView(BaseObjectUpdateView):
     """Представление для редактирования лида."""
 
     model = PotentialClient
     object: PotentialClient  # Явная аннотация для mypy
     form_class = PotentialClientForm
     template_name = "leads/leads-edit.html"
-    # Право на изменение будет только у Оператора
     permission_required = "leads.change_potentialclient"
 
     def get_success_url(self) -> str:
@@ -155,13 +157,12 @@ class LeadUpdateView(LoginRequiredMixin, ObjectPermissionRequiredMixin, UpdateVi
         return response
 
 
-class LeadDeleteView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DeleteView):
+class LeadDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления лида."""
 
     model = PotentialClient
     template_name = "leads/leads-delete.html"
     success_url = reverse_lazy("leads:list")
-    # Право на удаление будет только у Оператора
     permission_required = "leads.delete_potentialclient"
 
     def form_valid(self, form: BaseModelForm) -> HttpResponseRedirect:
@@ -206,17 +207,27 @@ class LeadDeleteView(LoginRequiredMixin, ObjectPermissionRequiredMixin, DeleteVi
             return HttpResponseRedirect(reverse("leads:detail", kwargs={"pk": self.object.pk}))
 
 
-class UpdateLeadStatusView(LoginRequiredMixin, PermissionRequiredMixin, View):
+class UpdateLeadStatusView(LoginRequiredMixin, View):
     """
     Базовый View для смены статуса лида.
-    Принимает рекламную кампанию лида и новый статус из URL.
+    Принимает id и новый статус из URL.
+    Проверяет объектные права вручную.
     """
 
-    permission_required = "leads.change_potentialclient"
-
     def post(self, request: HttpRequest, pk: int, status: str) -> HttpResponse:
+        # Получаем лида.
         lead = get_object_or_404(PotentialClient, pk=pk)
-        old_status = lead.get_status_display()  # Запоминаем старый статус для лога
+
+        # Проверяем, есть ли у пользователя право 'change_potentialclient' на конкретный объект 'lead'.
+        if not request.user.has_perm("leads.change_potentialclient", lead):
+            logger.warning(
+                f"Пользователь '{request.user.username}' пытался изменить статус лида PK={pk}, не имея на это прав."
+            )
+            # Если прав нет - вызываем ошибку 403.
+            raise PermissionDenied
+
+        # Запоминаем старый статус для лога.
+        old_status = lead.get_status_display()
 
         # Проверяем, что переданный статус валиден.
         valid_statuses = [status[0] for status in PotentialClient.Status.choices]

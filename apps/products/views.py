@@ -5,13 +5,18 @@
 import logging
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import ProtectedError
 from django.forms.models import BaseModelForm
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, UpdateView
-from django_filters.views import FilterView
+
+from apps.common.views import (
+    BaseCreateView,
+    BaseListView,
+    BaseObjectDeleteView,
+    BaseObjectDetailView,
+    BaseObjectUpdateView,
+)
 
 from .filters import ServiceFilter
 from .forms import ServiceForm
@@ -21,7 +26,7 @@ from .models import Service
 logger = logging.getLogger("apps.products")
 
 
-class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
+class ServiceListView(BaseListView):
     """Представление для отображения списка услуг с фильтрацией, пагинацией и сортировкой."""
 
     model = Service
@@ -35,7 +40,7 @@ class ServiceListView(LoginRequiredMixin, PermissionRequiredMixin, FilterView):
     paginate_by = 20
 
 
-class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+class ServiceDetailView(BaseObjectDetailView):
     """Представление для детального просмотра услуги."""
 
     model = Service
@@ -43,7 +48,7 @@ class ServiceDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView)
     permission_required = "products.view_service"
 
 
-class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class ServiceCreateView(BaseCreateView):
     """Представление для создания новой услуги."""
 
     model = Service
@@ -72,7 +77,7 @@ class ServiceCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         return response
 
 
-class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class ServiceUpdateView(BaseObjectUpdateView):
     """Представление для редактирования услуги."""
 
     model = Service
@@ -101,7 +106,7 @@ class ServiceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return response
 
 
-class ServiceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ServiceDeleteView(BaseObjectDeleteView):
     """
     Представление для "мягкого" удаления услуги.
     """

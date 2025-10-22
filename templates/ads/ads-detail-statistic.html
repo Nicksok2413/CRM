@@ -36,6 +36,7 @@
             <tr>
                 <th>ФИО</th>
                 <th>Email</th>
+                <th>Контракт</th>
                 <th class="text-center">Статус контракта</th>
                 <th class="text-end">Сумма контракта</th>
             </tr>
@@ -55,12 +56,36 @@
                 <!-- Email -->
                 <td>{{ lead.email }}</td>
 
+                <!-- Контракт -->
+                <td>
+                    {% if lead.active_contract %}
+                        {% if perms.contracts.view_contract %}
+                            <a href="{% url 'contracts:detail' lead.active_contract.contract.pk %}">
+                                {{ lead.active_contract.contract.name }}
+                            </a>
+                        {% else %}
+                            {{ lead.active_contract.contract.name }}
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
                 <!-- Статус контракта -->
                 <td class="text-center">
+                    {# Приоритет №1: Если есть АКТИВНЫЙ контракт, статус всегда "Активный" #}
                     {% if lead.active_contract %}
                         <span class="badge bg-success">Активный</span>
+
+                    {# Приоритет №2: Если НЕТ активного контракта, но статус "Потерян" #}
+                    {% elif lead.status == lead.Status.LOST %}
+                        <span class="badge bg-secondary">Потерян</span>
+
+                    {# Приоритет №3: Если НЕТ активного, НЕ потерян, но ЕСТЬ история #}
                     {% elif lead.contracts_history.exists %}
                         <span class="badge bg-secondary">Архивный</span>
+
+                    {# Иначе (НЕТ активного, НЕ потерян, НЕТ истории) #}
                     {% else %}
                         <span class="badge bg-warning text-dark">В работе</span>
                     {% endif %}
@@ -77,7 +102,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" class="text-center">Для этой кампании еще нет лидов.</td>
+                <td colspan="4" class="text-center">Нет лидов.</td>
             </tr>
             {% endfor %}
         </tbody>

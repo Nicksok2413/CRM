@@ -13,6 +13,7 @@ from django.db.models import Case, Count, DecimalField, ExpressionWrapper, F, Pr
 from django.db.models.functions import Coalesce
 
 from apps.customers.models import ActiveClient
+from apps.leads.models import PotentialClient
 
 from .models import AdCampaign
 
@@ -82,34 +83,64 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
         CampaignDetailStats: Словарь с подробной статистикой.
     """
 
-    # Получаем всех лидов кампании, предзагружая историю контрактов.
-    # И внутри этой предзагрузки также подтягиваем данные самих контрактов.
+    # 1. Получаем всех лидов кампании, предзагружая историю контрактов.
+
+    # Внутри предзагрузки также подтягиваем данные самих контрактов.
     leads_query = campaign.leads.all().prefetch_related(
         # Prefetch - для обратной связи (может быть много записей).
         Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
     )
 
-    # Копируем queryset в список.
-    leads_list = list(leads_query)
+    # 2. Копируем queryset в список.
+    all_leads_list = list(leads_query)
 
-    # Фильтруем список в зависимости от GET-параметра.
-    if status_filter == "active":
-        leads_list = [lead for lead in leads_list if lead.active_contract]
-    elif status_filter == "archived":
-        leads_list = [lead for lead in leads_list if not lead.active_contract and lead.contracts_history.exists()]
-    elif status_filter == "in_work":
-        leads_list = [lead for lead in leads_list if not lead.contracts_history.exists()]
+    # 3. Рассчитываем KPI на основе всех привлеченных лидов.
 
-    # Рассчитываем общую статистику на основе отфильтрованного списка.
-    active_clients = [lead.active_contract for lead in leads_list if lead.active_contract is not None]
-    total_revenue = Decimal(sum(active_client.contract.amount for active_client in active_clients))
+    # Общий доход: суммируем amount всех контрактов из всей истории всех лидов.
+    total_revenue = Decimal(0)
+
+    for lead in all_leads_list:
+        for history_entry in lead.contracts_history.all():
+            if history_entry.contract:
+                total_revenue += history_entry.contract.amount
+
+    # Активные клиенты: считаем тех, у кого есть текущий активный контракт.
+    active_clients_count = sum(1 for lead in all_leads_list if lead.active_contract)
+
+    # Рентабельность
     profit = float((total_revenue / campaign.budget) * 100) if campaign.budget > 0 else None
 
-    # Возвращаем типизированный словарь
+    # 4. Фильтруем список для отображения в таблице.
+
+    # Копируем список.
+    display_leads_list = all_leads_list[:]
+
+    if status_filter == "active":
+        display_leads_list = [lead for lead in display_leads_list if lead.active_contract]
+    elif status_filter == "archived":
+        # "Архивный" - это тот, кто НЕ активен и НЕ находится в работе.
+        # То есть:
+        # 1. Либо у него есть история контрактов, но нет активного.
+        # 2. Либо у него стоит статус "Потерян".
+        display_leads_list = [
+            lead
+            for lead in display_leads_list
+            if (not lead.active_contract and lead.contracts_history.exists())
+            or (lead.status == PotentialClient.Status.LOST)
+        ]
+    elif status_filter == "in_work":
+        # "В работе" - это тот, у кого нет истории контрактов И он не "потерян".
+        display_leads_list = [
+            lead
+            for lead in display_leads_list
+            if not lead.contracts_history.exists() and lead.status != PotentialClient.Status.LOST
+        ]
+
+    # Возвращаем результат.
     return {
-        "leads_list": leads_list,
-        "total_leads": len(leads_list),
-        "total_active_clients": len(active_clients),
-        "total_revenue": total_revenue,
+        "leads_list": display_leads_list,  # В таблицу идет отфильтрованный список
+        "total_leads": len(all_leads_list),  # В KPI идет общее количество привлеченных лидов
+        "total_active_clients": active_clients_count,  # В KPI идет количество текущих активных клиентов
+        "total_revenue": total_revenue,  # В KPI идет общий доход за все время
         "profit": profit,
     }

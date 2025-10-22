@@ -18,9 +18,9 @@ class PotentialClientAdmin(admin.ModelAdmin):
     list_display = ("last_name", "first_name", "email", "phone", "status", "ad_campaign", "manager")
 
     # Оптимизация запросов: при загрузке списка лидов
-    # сразу загружаем связанные данные рекламных компаний одним SQL-запросом, избегая проблемы "N+1".
+    # сразу загружаем связанные данные рекламных компаний и менеджера одним SQL-запросом, избегая проблемы "N+1".
     # `list_select_related` заставляет Django использовать SQL JOIN, получая все данные за один запрос.
-    list_select_related = ("ad_campaign",)
+    list_select_related = ("ad_campaign", "manager")
 
     # Поиск по всем контактным данным.
     search_fields = ("last_name", "first_name", "email", "phone")
