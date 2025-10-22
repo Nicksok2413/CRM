@@ -253,7 +253,7 @@ class AdCampaignDetailStatisticView(BaseObjectDetailView):
 
             # Сохраняем результат в кэш на 15 минут.
             # В следующий раз, когда кто-то запросит эту же страницу с этим же фильтром, возьмем данные отсюда.
-            cache.set(cache_key, computed_data, timeout=60 * 15)
+            cache.set(cache_key, computed_data, timeout=60 * 1)
 
         # Добавляем данные и форму в контекст.
         context.update(computed_data)
