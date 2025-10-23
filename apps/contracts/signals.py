@@ -11,7 +11,7 @@ from django.dispatch import receiver
 
 from .models import Contract
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.contracts")
 
 

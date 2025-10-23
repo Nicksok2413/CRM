@@ -32,7 +32,7 @@ from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.leads")
 
 
@@ -161,6 +161,7 @@ class LeadDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления лида."""
 
     model = PotentialClient
+    object: PotentialClient  # Явная аннотация для mypy
     template_name = "leads/leads-delete.html"
     success_url = reverse_lazy("leads:list")
     permission_required = "leads.delete_potentialclient"
@@ -210,6 +211,7 @@ class LeadDeleteView(BaseObjectDeleteView):
 class UpdateLeadStatusView(LoginRequiredMixin, View):
     """
     Базовый View для смены статуса лида.
+
     Принимает id и новый статус из URL.
     Проверяет объектные права вручную.
     """

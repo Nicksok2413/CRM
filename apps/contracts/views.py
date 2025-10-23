@@ -23,7 +23,7 @@ from .filters import ContractFilter
 from .forms import ContractForm
 from .models import Contract
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.contracts")
 
 
@@ -35,9 +35,9 @@ class ContractListView(BaseListView):
     context_object_name = "contracts"
     permission_required = "contracts.view_contract"
 
-    # Подключаем класс фильтра
+    # Подключаем класс фильтра.
     filterset_class = ContractFilter
-    # Устанавливаем пагинацию
+    # Устанавливаем пагинацию.
     paginate_by = 25
 
     def get_queryset(self) -> QuerySet[Contract]:
@@ -47,7 +47,7 @@ class ContractListView(BaseListView):
         """
         queryset = super().get_queryset().select_related("service")
 
-        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе
+        # Оборачиваем результат в `cast`, чтобы mypy был уверен в типе.
         return cast(QuerySet[Contract], queryset)
 
 
@@ -128,6 +128,7 @@ class ContractDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления контракта."""
 
     model = Contract
+    object: Contract  # Явная аннотация для mypy
     template_name = "contracts/contracts-delete.html"
     success_url = reverse_lazy("contracts:list")
     permission_required = "contracts.delete_contract"

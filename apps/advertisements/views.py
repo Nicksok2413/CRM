@@ -132,6 +132,7 @@ class AdCampaignDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления рекламной кампании."""
 
     model = AdCampaign
+    object: AdCampaign  # Явная аннотация для mypy
     template_name = "ads/ads-delete.html"
     success_url = reverse_lazy("ads:list")
     permission_required = "advertisements.delete_adcampaign"
@@ -253,7 +254,7 @@ class AdCampaignDetailStatisticView(BaseObjectDetailView):
 
             # Сохраняем результат в кэш на 15 минут.
             # В следующий раз, когда кто-то запросит эту же страницу с этим же фильтром, возьмем данные отсюда.
-            cache.set(cache_key, computed_data, timeout=60 * 1)
+            cache.set(cache_key, computed_data, timeout=60 * 15)
 
         # Добавляем данные и форму в контекст.
         context.update(computed_data)

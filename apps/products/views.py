@@ -112,6 +112,7 @@ class ServiceDeleteView(BaseObjectDeleteView):
     """
 
     model = Service
+    object: Service  # Явная аннотация для mypy
     template_name = "products/products-delete.html"
     success_url = reverse_lazy("products:list")
     permission_required = "products.delete_service"
