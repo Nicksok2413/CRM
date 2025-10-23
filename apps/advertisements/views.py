@@ -132,6 +132,7 @@ class AdCampaignDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления рекламной кампании."""
 
     model = AdCampaign
+    object: AdCampaign  # Явная аннотация для mypy
     template_name = "ads/ads-delete.html"
     success_url = reverse_lazy("ads:list")
     permission_required = "advertisements.delete_adcampaign"

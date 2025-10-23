@@ -128,6 +128,7 @@ class ContractDeleteView(BaseObjectDeleteView):
     """Представление для "мягкого" удаления контракта."""
 
     model = Contract
+    object: Contract  # Явная аннотация для mypy
     template_name = "contracts/contracts-delete.html"
     success_url = reverse_lazy("contracts:list")
     permission_required = "contracts.delete_contract"
