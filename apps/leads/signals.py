@@ -13,6 +13,7 @@ from guardian.shortcuts import assign_perm
 from apps.customers.models import ActiveClient
 
 from .models import PotentialClient
+from .tasks import notify_manager_about_new_lead
 
 # Получаем логгер для приложения
 logger = logging.getLogger("apps.leads")
@@ -32,7 +33,7 @@ def assign_lead_permissions_on_save(
     Args:
     sender: Класс модели, отправившей сигнал (PotentialClient).
     instance: Экземпляр сохраняемого лида (PotentialClient).
-    created: Флаг, указывающий, была ли запись сохранена.
+    created: Флаг, указывающий, была ли запись создана.
     **kwargs: Дополнительные аргументы.
     """
 
@@ -46,7 +47,7 @@ def assign_lead_permissions_on_save(
         ]
 
         # Назначаем права.
-        # `assign_perm` - это основная функция django-guardian.
+        # `assign_perm` - основная функция django-guardian.
         # Она говорит: "Дай пользователю `instance.manager` права из списка `permissions` на объект `instance`".
         for permission in permissions:
             assign_perm(permission, instance.manager, instance)
@@ -55,6 +56,15 @@ def assign_lead_permissions_on_save(
             f"Сигнал: Менеджеру (username={instance.manager.username}) "
             f"назначены права на управление лидом '{instance}' (PK={instance.pk}), "
         )
+
+        # Если лид только что создан и ему назначен менеджер.
+        if created and instance.manager:
+            logger.info(
+                f"Сигнал: Запуск задачи на уведомление менеджера '{instance.manager}' о новом лиде '{instance}'."
+            )
+            # Вызываем задачу асинхронно.
+            # .delay() - стандартный способ запуска.
+            notify_manager_about_new_lead.delay(lead_id=instance.pk, manager_id=instance.manager.pk)
 
 
 @receiver(pre_delete, sender=PotentialClient)
