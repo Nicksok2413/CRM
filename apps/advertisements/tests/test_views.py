@@ -3,10 +3,6 @@ from django.urls import reverse
 from decimal import Decimal
 
 
-# Нам больше не нужны импорты фабрик и моделей прав здесь
-# Все это теперь инкапсулировано в фикстурах
-
-
 @pytest.mark.django_db
 def test_ad_campaign_statistic_view(client, marketing_user, test_data):
     """
