@@ -19,6 +19,9 @@ crispy-bootstrap5==2025.6
 django-redis==6.0.0
 redis==6.4.0
 
+# Асинхронные задачи
+celery==5.5.3
+
 # Драйвер PostgreSQL
 psycopg[binary]==3.2.11
 

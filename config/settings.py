@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 
 import sentry_sdk
+from celery.schedules import crontab
 from decouple import config
 from django.contrib.messages import constants as messages
 
@@ -337,7 +338,7 @@ CACHES = {
         "BACKEND": "django_redis.cache.RedisCache",
         # URL Redis-сервера.
         # `db=1` означает, что мы используем "базу данных" №1 для кэша,
-        # чтобы не смешивать его с другими потенциальными задачами (например, Celery).
+        # чтобы не смешивать его с другими задачами (Celery).
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
@@ -347,6 +348,38 @@ CACHES = {
 
 # Время жизни кэша по умолчанию (в секундах).
 CACHE_TTL = 60 * 10  # 10 минут
+
+
+# ======================================================================
+# НАСТРОЙКИ CELERY (АСИНХРОННЫЕ ЗАДАЧИ)
+# ======================================================================
+
+# URL брокера сообщений. Celery будет отправлять сюда задачи.
+# Мы используем базу данных Redis №2, чтобы не смешивать задачи с кэшем.
+CELERY_BROKER_URL = "redis://127.0.0.1:6379/2"
+
+# URL бэкенда для хранения результатов. Позволяет отслеживать статус задач.
+CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/2"
+
+# Настройки для Celery Beat (планировщик периодических задач).
+CELERY_BEAT_SCHEDULE = {
+    # Имя задачи.
+    "check-expiring-contracts-every-morning": {
+        # Путь к задаче.
+        "task": "apps.contracts.tasks.check_expiring_contracts",
+        # Расписание: выполнять каждый день в 8:00 утра.
+        "schedule": crontab(hour=8, minute=0),
+    },
+}
+
+# ======================================================================
+# НАСТРОЙКИ ЭЛЕКТРОННОЙ ПОЧТЫ
+# ======================================================================
+
+# В режиме разработки не будем отправляем реальные письма.
+# Вместо этого Django будет выводить их содержимое в консоль.
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "crm-no-reply@example.com"
 
 
 # ======================================================================

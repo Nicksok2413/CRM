@@ -32,7 +32,7 @@ from .filters import LeadFilter
 from .forms import PotentialClientForm
 from .models import PotentialClient
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.leads")
 
 
