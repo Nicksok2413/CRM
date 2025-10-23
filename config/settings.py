@@ -379,7 +379,9 @@ CELERY_BEAT_SCHEDULE = {
 # В режиме разработки не будем отправляем реальные письма.
 # Вместо этого Django будет выводить их содержимое в консоль.
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "crm-no-reply@example.com"
+
+# Читаем email отправителя из .env. Если там его нет, используем значение по умолчанию.
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="crm-no-reply@example.com")
 
 
 # ======================================================================
@@ -466,3 +468,6 @@ MAX_IMAGE_SIZE_MB = 2
 
 # Максимальный размер загружаемого документа (в МБ).
 MAX_DOCUMENT_SIZE_MB = 10
+
+# Читаем количество дней из .env, преобразуя значение в целое число (int).
+CONTRACT_EXPIRATION_NOTICE_DAYS = config("CONTRACT_EXPIRATION_NOTICE_DAYS", default=7, cast=int)

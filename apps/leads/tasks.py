@@ -1,6 +1,7 @@
 import logging
 
 from celery import shared_task
+from django.conf import settings
 from django.core.mail import send_mail
 
 from apps.users.models import User
@@ -53,7 +54,7 @@ def notify_manager_about_new_lead(lead_id: int, manager_id: int) -> None:
         send_mail(
             subject=subject,
             message=message,
-            from_email="crm-no-reply@example.com",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[manager.email],
             fail_silently=False,  # Если отправка не удастся, Celery зафиксирует ошибку.
         )

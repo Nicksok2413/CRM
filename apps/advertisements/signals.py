@@ -13,7 +13,7 @@ from apps.leads.models import PotentialClient
 
 from .models import AdCampaign
 
-# Получаем логгер для приложения
+# Получаем логгер для приложения.
 logger = logging.getLogger("apps.products")
 
 

@@ -24,7 +24,7 @@ def create_user_profile(sender: type[User], instance: User, created: bool, **kwa
     Args:
         sender: Класс модели, отправившей сигнал (User).
         instance: Экземпляр созданного пользователя (User).
-        created: Флаг, указывающий, была ли запись создана.
+        created: Флаг, `True` если объект был создан, `False` если обновлен.
         **kwargs: Дополнительные аргументы.
     """
 

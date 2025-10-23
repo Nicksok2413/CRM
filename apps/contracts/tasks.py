@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 from celery import shared_task
+from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
 
@@ -24,8 +25,9 @@ def check_expiring_contracts() -> None:
 
     logger.info("Запуск периодической задачи: `check_expiring_contracts`.")
 
-    # Определяем целевую дату (ровно через неделю от сегодня).
-    target_date = timezone.now().date() + timedelta(days=7)
+    # Определяем целевую дату.
+    days_to_expire = settings.CONTRACT_EXPIRATION_NOTICE_DAYS
+    target_date = timezone.now().date() + timedelta(days=days_to_expire)
 
     # Строим "тяжелый" запрос к БД.
     # Мы ищем только "активные" контракты, т.е. те, у которых:
@@ -41,14 +43,51 @@ def check_expiring_contracts() -> None:
     )
 
     if not expiring_contracts:
-        logger.info("Проверка истекающих контрактов: контрактов для уведомления не найдено.")
+        logger.info("Проверка истекающих контрактов: контрактов, истекающих через {days_to_expire} дней, не найдено.")
         return
 
+    # Собираем контракты в словарь, где ключ - менеджер, а значение - список его контрактов.
+    contracts_by_manager = {}
+
     for contract in expiring_contracts:
-        manager = contract.active_client.potential_client.manager
+        # Убеждаемся, что у лида есть ответственный менеджер.
+        manager = getattr(getattr(getattr(contract, "active_client", None), "potential_client", None), "manager", None)
 
         if manager and manager.email:
-            subject = f"CRM: Контракт '{contract.name}' скоро истекает."
-            message = f"Здравствуйте, {manager.first_name}!\n\nНапоминаем, что контракт №{contract.name} для клиента {contract.active_client.potential_client} истекает {contract.end_date.strftime('%d-%m-%Y')}."
-            send_mail(subject, message, "crm@example.com", [manager.email])
-            logger.info(f"Уведомление об истекающем контракте '{contract.name}' отправлено менеджеру '{manager}'.")
+            # `setdefault` - удобный способ инициализировать список, если ключ еще не существует.
+            contracts_by_manager.setdefault(manager, []).append(contract)
+
+    # Отправляем сгруппированные письма.
+    for manager, contracts in contracts_by_manager.items():
+        subject = f"CRM: Напоминание о контрактах, истекающих {target_date.strftime('%d-%m-%Y')}"
+
+        # Формируем красивый список контрактов для тела письма.
+        contracts_list_str = "\n".join(
+            [f"- {contract.name} (клиент: {contract.active_client.potential_client})" for contract in contracts]
+        )
+
+        # Формируем письмо.
+        message = f"""
+        Здравствуйте, {manager.first_name or manager.username}!
+
+        Напоминаем, что у следующих ваших клиентов контракты истекают через 7 дней:
+
+        {contracts_list_str}
+
+        Пожалуйста, свяжитесь с ними для продления сотрудничества.
+        """
+
+        # Отправляем письмо.
+        # Используем стандартную функцию Django для отправки почты.
+        # Она будет использовать бэкенд, указанный в `settings.py` (консоль или реальный SMTP).
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[manager.email],
+            fail_silently=False,  # Если отправка не удастся, Celery зафиксирует ошибку.
+        )
+
+        logger.info(f"Уведомление об истекающих контрактах ({len(contracts)} шт.) отправлено менеджеру '{manager}'.")
+
+    logger.info(f"Задача `check_expiring_contracts` завершена. Отправлено уведомлений: {len(contracts_by_manager)}.")
