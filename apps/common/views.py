@@ -46,8 +46,6 @@ class BaseCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     Базовый класс для представлений создания объектов с проверкой ГЛОБАЛЬНЫХ прав.
     """
 
-    # Исправляем ошибку mypy о несовместимости `login_url`.
-    login_url: str | None = None
     object: Model  # Явная аннотация для mypy
 
 
@@ -56,8 +54,7 @@ class BaseUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     Базовый класс для представлений обновления объектов с проверкой ГЛОБАЛЬНЫХ прав.
     """
 
-    login_url: str | None = None
-    object: Model
+    object: Model  # Явная аннотация для mypy
 
 
 class BaseDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
@@ -65,8 +62,7 @@ class BaseDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     Базовый класс для представлений удаления объектов с проверкой ГЛОБАЛЬНЫХ прав.
     """
 
-    login_url: str | None = None
-    object: Model
+    object: Model  # Явная аннотация для mypy
 
 
 # ==============================================================================
@@ -83,7 +79,8 @@ class BaseObjectDetailView(LoginRequiredMixin, ObjectPermissionRequiredMixin, De
     Базовый класс для детального просмотра с проверкой ОБЪЕКТНЫХ прав.
     """
 
-    login_url: str | None = None
+    # Явные аннотации для mypy.
+    login_url: str
     object: Model
 
 
@@ -92,7 +89,8 @@ class BaseObjectUpdateView(LoginRequiredMixin, ObjectPermissionRequiredMixin, Up
     Базовый класс для редактирования с проверкой ОБЪЕКТНЫХ прав.
     """
 
-    login_url: str | None = None
+    # Явные аннотации для mypy.
+    login_url: str
     object: Model
 
 
@@ -101,5 +99,6 @@ class BaseObjectDeleteView(LoginRequiredMixin, ObjectPermissionRequiredMixin, De
     Базовый класс для удаления с проверкой ОБЪЕКТНЫХ прав.
     """
 
-    login_url: str | None = None
+    # Явные аннотации для mypy.
+    login_url: str
     object: Model

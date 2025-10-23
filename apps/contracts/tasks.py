@@ -1,10 +1,13 @@
 import logging
+from collections import defaultdict
 from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
+
+from apps.users.models import User
 
 from .models import Contract
 
@@ -47,15 +50,32 @@ def check_expiring_contracts() -> None:
         return
 
     # Собираем контракты в словарь, где ключ - менеджер, а значение - список его контрактов.
-    contracts_by_manager = {}
+    # Явно аннотируем тип словаря. Ключ - объект User, значение - список объектов Contract.
+    # `defaultdict(list)` автоматически создает пустой список для нового ключа.
+    contracts_by_manager: defaultdict[User, list[Contract]] = defaultdict(list)
 
     for contract in expiring_contracts:
         # Убеждаемся, что у лида есть ответственный менеджер.
-        manager = getattr(getattr(getattr(contract, "active_client", None), "potential_client", None), "manager", None)
+        # Пошагово проверяем наличие каждого связанного объекта.
+        # Это делает код более читаемым и удовлетворяет mypy.
 
-        if manager and manager.email:
-            # `setdefault` - удобный способ инициализировать список, если ключ еще не существует.
-            contracts_by_manager.setdefault(manager, []).append(contract)
+        active_client = getattr(contract, "active_client", None)
+
+        if not active_client:
+            continue
+
+        potential_client = getattr(active_client, "potential_client", None)
+
+        if not potential_client:
+            continue
+
+        manager = getattr(potential_client, "manager", None)
+
+        if not manager or not manager.email:
+            continue
+
+        # Если дошли до сюда, значит, `manager` существует и у него есть email.
+        contracts_by_manager[manager].append(contract)
 
     # Отправляем сгруппированные письма.
     for manager, contracts in contracts_by_manager.items():
@@ -63,7 +83,10 @@ def check_expiring_contracts() -> None:
 
         # Формируем красивый список контрактов для тела письма.
         contracts_list_str = "\n".join(
-            [f"- {contract.name} (клиент: {contract.active_client.potential_client})" for contract in contracts]
+            [
+                f"- {contract.name} (клиент: {contract.active_client.potential_client if contract.active_client else 'N/A'})"
+                for contract in contracts
+            ]
         )
 
         # Формируем письмо.
