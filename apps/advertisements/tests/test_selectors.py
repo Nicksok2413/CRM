@@ -19,7 +19,7 @@ from apps.leads.models import PotentialClient
 
 
 @pytest.fixture
-def detailed_stats_data(db: None) -> dict:
+def detailed_stats_data() -> dict:
     """
     Фикстура для создания сложного набора данных для тестирования
     детальной статистики `get_detailed_stats_for_campaign`.

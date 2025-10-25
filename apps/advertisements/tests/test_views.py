@@ -2,7 +2,6 @@ import pytest
 from django.urls import reverse
 from decimal import Decimal
 
-from apps.advertisements.selectors import get_campaigns_with_stats
 from apps.common.management.commands.populate_db import (
     AdCampaignFactory,
     ContractFactory,
@@ -13,7 +12,7 @@ from apps.common.management.commands.populate_db import (
 
 
 @pytest.fixture
-def test_data():
+def statistic_view_data(db):
     """
     Фикстура для создания изолированного набора тестовых данных.
     """
@@ -46,28 +45,30 @@ def test_data():
 
 
 @pytest.mark.django_db
-def test_ad_campaign_statistic_view(client, marketing_user, test_data):
+def test_ad_campaign_statistic_view(api_client, create_user_with_role, statistic_view_data):
     """
     Тестирует AdCampaignStatisticView, используя данные из фикстур.
     """
 
     # 1. ARRANGE (Подготовка данных).
 
-    # Логиним пользователя, созданного в фикстуре `marketing_user`.
-    client.login(username="marketing_user", password="password")
+    # Создаем пользователя и добавляем его в группу "Маркетолог".
+    create_user_with_role(username="marketer", role_name="Маркетолог")
 
-    # Получаем ID нашей целевой кампании из фикстуры `test_data`.
-    target_campaign_pk = test_data
+    api_client.login(username="marketer", password="password")
+
+    # Получаем ID нашей целевой кампании из фикстуры `statistic_view_data`.
+    target_campaign_pk = statistic_view_data
 
     # 2. ACT (Выполнение действия).
 
     url = reverse('ads:statistic')
-    response = client.get(url)
+    response = api_client.get(url)
 
     # 3. ASSERT (Проверка результата).
 
     # Получаем статистику всех кампаний.
-    all_campaign_stats = response.context_data['ads']
+    all_campaign_stats = response.context['ads']
 
     # Находим статистику целевой кампании.
     target_stats = None
