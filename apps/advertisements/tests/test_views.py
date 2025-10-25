@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from decimal import Decimal
 
+from apps.advertisements.selectors import get_campaigns_with_stats
 from apps.common.management.commands.populate_db import (
     AdCampaignFactory,
     ContractFactory,
@@ -16,31 +17,31 @@ def test_data():
     """
     Фикстура для создания изолированного набора тестовых данных.
     """
-    # 1. Создаем одну общую услугу для всех
+    # 1. Создаем одну общую услугу для всех.
     service = ServiceFactory()
 
-    # 2. Создаем две кампании, обе для одной и той же услуги
+    # 2. Создаем две кампании, обе для одной и той же услуги.
     target_campaign = AdCampaignFactory(budget=1000.00, name="Целевая кампания", service=service)
     other_campaign = AdCampaignFactory(budget=5000.00, name="Другая кампания", service=service)
 
-    # 3. Создаем лидов для целевой кампании
+    # 3. Создаем лидов для целевой кампании.
     target_leads = PotentialClientFactory.create_batch(3, ad_campaign=target_campaign)
 
     # 4. Активируем 2 из 3 лидов для целевой кампании.
-    # Создаем контракт для первого лида
+    # Создаем контракт для первого лида.
     contract1 = ContractFactory.create(amount=750.00, service=service)
     ActiveClientFactory.create(potential_client=target_leads[0], contract=contract1)
 
-    # Создаем контракт для второго лида
+    # Создаем контракт для второго лида.
     contract2 = ContractFactory.create(amount=1250.00, service=service)
     ActiveClientFactory.create(potential_client=target_leads[1], contract=contract2)
 
-    # 5. Создаем "шумовые" данные для другой кампании
+    # 5. Создаем "шумовые" данные для другой кампании.
     other_lead = PotentialClientFactory.create(ad_campaign=other_campaign)
     other_contract = ContractFactory.create(amount=9999.00, service=service)
     ActiveClientFactory.create(potential_client=other_lead, contract=other_contract)
 
-    # Возвращаем ID целевой кампании, чтобы тест знал, что проверять
+    # Возвращаем ID целевой кампании, чтобы тест знал, что проверять.
     return target_campaign.pk
 
 
@@ -65,6 +66,7 @@ def test_ad_campaign_statistic_view(client, marketing_user, test_data):
 
     # 3. ASSERT (Проверка результата).
 
+    # Получаем статистику всех кампаний.
     all_campaign_stats = response.context_data['ads']
 
     # Находим статистику целевой кампании.
@@ -81,5 +83,5 @@ def test_ad_campaign_statistic_view(client, marketing_user, test_data):
     assert target_stats.leads_count == 3
     assert target_stats.customers_count == 2
     # Используем Decimal для точного сравнения.
-    assert target_stats.total_revenue == Decimal("2000.00")  # 750 + 1250
-    assert target_stats.profit == Decimal("200.00")  # (2000 / 1000) * 100
+    assert target_stats.total_revenue == Decimal("2000.00")
+    assert target_stats.profit == Decimal("200.00")

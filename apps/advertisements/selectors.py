@@ -83,12 +83,12 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
         CampaignDetailStats: Словарь с подробной статистикой.
     """
 
-    # 1. Получаем всех лидов кампании, предзагружая историю контрактов.
+    # 1. Получаем всех лидов кампании, предзагружая полную историю контрактов.
 
     # Внутри предзагрузки также подтягиваем данные самих контрактов.
     leads_query = campaign.leads.all().prefetch_related(
         # Prefetch - для обратной связи (может быть много записей).
-        Prefetch("contracts_history", queryset=ActiveClient.objects.select_related("contract"))
+        Prefetch("contracts_history", queryset=ActiveClient.all_objects.select_related("contract"))
     )
 
     # 2. Копируем queryset в список.
@@ -116,6 +116,7 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
     display_leads_list = all_leads_list[:]
 
     if status_filter == "active":
+        # Активный - есть текущий активный контракт.
         display_leads_list = [lead for lead in display_leads_list if lead.active_contract]
     elif status_filter == "archived":
         # "Архивный" - это тот, кто НЕ активен и НЕ находится в работе.
