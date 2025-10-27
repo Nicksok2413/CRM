@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from sys import argv
 
 import sentry_sdk
 from celery.schedules import crontab
@@ -333,18 +334,26 @@ if SENTRY_DSN:
 # https://docs.djangoproject.com/en/5.2/topics/cache/
 # ======================================================================
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        # URL Redis-сервера.
-        # `db=1` означает, что мы используем "базу данных" №1 для кэша,
-        # чтобы не смешивать его с другими задачами (Celery).
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+# Проверяем, запущен ли проект в режиме тестирования.
+# `pytest` автоматически добавляет 'test' в `sys.argv`.
+if "test" in argv:
+    # Если это тесты, используем "фиктивный" кэш, который ничего не делает.
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        }
     }
-}
+else:
+    # В обычном режиме (runserver, gunicorn) используем Redis.
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
 
 # Время жизни кэша по умолчанию (в секундах).
 CACHE_TTL = 60 * 10  # 10 минут
