@@ -17,13 +17,13 @@ crispy-bootstrap5==2025.6
 
 # Кэширование
 django-redis==6.0.0
-redis==6.4.0
+redis==7.0.0
 
 # Асинхронные задачи
 celery==5.5.3
 
 # Драйвер PostgreSQL
-psycopg[binary]==3.2.11
+psycopg[binary]==3.2.12
 
 # Переменные окружения
 python-decouple==3.8
