@@ -52,3 +52,18 @@ exclude = ["migrations/", "tests/"]
 [tool.django-stubs]
 # Указываем путь к настройкам Django
 django_settings_module = "config.settings"
+[tool.pdm]
+distribution = false
+
+[project]
+name = "CRM"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "nick", email = "8650180292@my.lerna.by"},
+]
+dependencies = []
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
