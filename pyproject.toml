@@ -142,7 +142,8 @@ types = "mypy apps/"  # Статический типизатор mypy
 test = "pytest"
 
 # Команда, которая запускает все проверки последовательно.
-check = "pdm run lint && pdm run format && pdm run types && pdm run test"
+# Определяем 'check' как 'composite' скрипт.
+check = { "composite" = ["lint", "format", "types", "test"] }
 
 # Скрипты для запуска Celery (для уведомлений).
 celery-worker = "celery -A config.celery worker --loglevel=info"
