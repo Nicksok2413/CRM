@@ -17,7 +17,7 @@ crispy-bootstrap5==2025.6
 
 # Кэширование
 django-redis==6.0.0
-redis==7.0.0
+redis==7.0.1
 
 # Асинхронные задачи
 celery==5.5.3
