@@ -125,9 +125,10 @@ dev = [
 run = "python manage.py runserver"
 
 # Скрипты для работы с миграциями.
+clear-migrations = "bash scripts/clear_migrations.sh"  # Скрипт для очистки всех миграций
 makemigrations = "python manage.py makemigrations"  # Создание миграций
-migrate = "python manage.py migrate"  # Применение миграций
 create-data-migration = "bash scripts/create_data_migration.sh"  # Скрипт для создания кастомной миграции
+migrate = "python manage.py migrate"  # Применение миграций
 
 # Наполнение БД правдоподобными данными для тестирования и разработки.
 populate = "python manage.py populate_db --count 20"  # `--count` - количество создаваемых записей
