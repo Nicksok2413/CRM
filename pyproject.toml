@@ -127,6 +127,7 @@ run = "python manage.py runserver"
 # Скрипты для работы с миграциями.
 makemigrations = "python manage.py makemigrations"  # Создание миграций
 migrate = "python manage.py migrate"  # Применение миграций
+create-data-migration = "bash scripts/create_data_migration.sh"  # Скрипт для создания кастомной миграции
 
 # Наполнение БД правдоподобными данными для тестирования и разработки.
 populate = "python manage.py populate_db --count 20"  # `--count` - количество создаваемых записей
@@ -142,6 +143,6 @@ test = "pytest"
 # Команда, которая запускает все проверки последовательно.
 check = "pdm run lint && pdm run format && pdm run types && pdm run test"
 
-# Скрипты для запуска Celery (для уведомлений)
+# Скрипты для запуска Celery (для уведомлений).
 celery-worker = "celery -A config.celery worker --loglevel=info"
 celery-beat = "celery -A config.celery beat --loglevel=info"
