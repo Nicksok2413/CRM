@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from sys import argv
+from typing import Any
 
 import sentry_sdk
 from celery.schedules import crontab
@@ -333,6 +334,9 @@ if SENTRY_DSN:
 # НАСТРОЙКИ КЭШИРОВАНИЯ
 # https://docs.djangoproject.com/en/5.2/topics/cache/
 # ======================================================================
+
+# Явно аннотируем тип переменной CACHES для mypy.
+CACHES: dict[str, Any]
 
 # Проверяем, запущен ли проект в режиме тестирования.
 # `pytest` автоматически добавляет 'test' в `sys.argv`.
