@@ -24,11 +24,7 @@ jobs:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
         # Опции для проверки "здоровья" контейнера.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
             
     # Определяем "матрицу стратегий". Это позволяет легко запускать тесты
     # на нескольких версиях Python, чтобы убедиться в совместимости.
@@ -70,7 +66,7 @@ jobs:
         env:
           # Предоставляем фиктивные переменные окружения, чтобы `settings.py` мог загрузиться.
           SECRET_KEY: "ci-secret-key-for-testing"
-          DEBUG: true
+          DEBUG: "True"
           DB_NAME: test_db
           DB_USER: test_user
           DB_PASSWORD: test_password
