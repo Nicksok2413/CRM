@@ -1,11 +1,11 @@
 # =================================================================
-# Конфигурация Ruff (Линтер + Форматер)
+# Конфигурация Ruff (Линтер + Форматер).
 # =================================================================
 [tool.ruff]
-# Устанавливаем максимальную длину строки
+# Устанавливаем максимальную длину строки.
 line-length = 120
 
-# Указываем директории, которые Ruff должен игнорировать
+# Указываем директории, которые Ruff должен игнорировать.
 exclude = [
     ".git",
     ".idea",
@@ -15,40 +15,135 @@ exclude = [
     "*/tests/*",
 ]
 
-# Настраиваем линтер
+# Настраиваем линтер.
 [tool.ruff.lint]
-# Выбираем наборы правил. 'E' и 'F' - это стандарт (pycodestyle, pyflakes)
-# 'I' - для сортировки импортов (isort)
+# Выбираем наборы правил. 'E' и 'F' - это стандарт (pycodestyle, pyflakes).
+# 'I' - для сортировки импортов (isort).
 select = ["E", "F", "W", "I"]
 
-# Игнорируем конкретные правила, если они мешают
-# Например, E501 (line too long) можно отключить, если вы доверяете форматеру
+# Игнорируем конкретные правила, если они мешают.
+# Например, E501 (line too long) можно отключить.
 ignore = ["E501"]
 
 
 # =================================================================
-# Конфигурация Mypy (Проверка типов)
+# Конфигурация Mypy (Проверка типов).
 # =================================================================
 [tool.mypy]
 # Включаем плагин для поддержки Django.
 plugins = "mypy_django_plugin.main"
 
-# Включаем строгие проверки
+# Включаем строгие проверки.
 check_untyped_defs = true
 disallow_untyped_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 
-# Игнорировать библиотеки, у которых нет аннотаций типов
+# Игнорировать библиотеки, у которых нет аннотаций типов.
 ignore_missing_imports = true
 
-# Директории для исключения из проверки
+# Директории для исключения из проверки.
 exclude = ["migrations/", "tests/"]
 
 
 # =================================================================
-# Конфигурация плагина Django-stubs
+# Конфигурация плагина Django-stubs.
 # =================================================================
 [tool.django-stubs]
-# Указываем путь к настройкам Django
+# Указываем путь к настройкам Django.
 django_settings_module = "config.settings"
+
+
+# =================================================================
+# PDM
+# =================================================================
+
+[tool.pdm]
+distribution = false
+
+[project]
+name = "CRM"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Mikalai Sakalouski", email = "nicksok2413@gmail.com"},
+]
+dependencies = [
+    "Django==5.2.7",
+    "django-filter==25.2",
+    "django-guardian==3.2.0",
+    "django-crispy-forms==2.4",
+    "crispy-bootstrap5==2025.6",
+    "django-redis==6.0.0",
+    "redis>=7.0.1",
+    "celery==5.5.3",
+    "psycopg[binary]==3.2.12",
+    "python-decouple==3.8",
+    "pillow==12.0.0",
+    "phonenumberslite==9.0.17",
+    "django-clamd==1.0.0",
+    "sentry-sdk[django]==2.42.1",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[dependency-groups]
+dev = [
+    "Django==5.2.7",
+    "django-filter==25.2",
+    "django-guardian==3.2.0",
+    "django-crispy-forms==2.4",
+    "crispy-bootstrap5==2025.6",
+    "django-redis==6.0.0",
+    "redis==7.0.1",
+    "celery==5.5.3",
+    "psycopg[binary]==3.2.12",
+    "python-decouple==3.8",
+    "pillow==12.0.0",
+    "phonenumberslite==9.0.17",
+    "django-clamd==1.0.0",
+    "sentry-sdk[django]==2.42.1",
+    "factory-boy==3.3.3",
+    "Faker==37.12.0",
+    "pytest==8.4.2",
+    "pytest-django==4.11.1",
+    "pre-commit==4.3.0",
+    "ruff==0.14.2",
+    "mypy==1.18.2",
+    "django-stubs==5.2.7",
+]
+
+# Скрипты
+[tool.pdm.scripts]
+# Запуск сервера разработки.
+run = "python manage.py runserver"
+
+# Скрипты для работы с миграциями.
+clear-migrations = "bash scripts/clear_migrations.sh"  # Скрипт для очистки всех миграций
+makemigrations = "python manage.py makemigrations"  # Создание миграций
+create-data-migration = "bash scripts/create_data_migration.sh"  # Скрипт для создания кастомной миграции
+migrate = "python manage.py migrate"  # Применение миграций
+
+# Наполнение БД правдоподобными данными для тестирования и разработки.
+populate = "python manage.py populate_db --count 20"  # `--count` - количество создаваемых записей
+
+# Запуск всех проверок качества кода.
+lint = "ruff check apps/"  # Линтер Ruff
+format = "ruff format apps/"  # Форматер Ruff
+types = "mypy apps/"  # Статический типизатор mypy
+
+# Запуск тестов.
+test = "pytest"
+
+# Команда, которая запускает все проверки последовательно.
+check = "pdm run lint && pdm run format && pdm run types && pdm run test"
+
+# Скрипты для запуска Celery (для уведомлений).
+celery-worker = "celery -A config.celery worker --loglevel=info"
+celery-beat = "celery -A config.celery beat --loglevel=info"

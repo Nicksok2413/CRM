@@ -10,8 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from sys import argv
+from typing import Any
 
 import sentry_sdk
 from celery.schedules import crontab
@@ -222,9 +224,13 @@ MESSAGE_TAGS = {
 # НАСТРОЙКИ ЛОГИРОВАНИЯ
 # https://docs.djangoproject.com/en/5.2/topics/logging/
 # ======================================================================
+LOGS_DIR = BASE_DIR / "logs"
 
-LOGFILE_NAME = BASE_DIR / "logs/info.log"
-LOGFILE_ERROR_NAME = BASE_DIR / "logs/error.log"
+if not LOGS_DIR.exists():
+    os.makedirs(LOGS_DIR)
+
+LOGFILE_NAME = LOGS_DIR / "info.log"
+LOGFILE_ERROR_NAME = LOGS_DIR / "error.log"
 LOGFILE_SIZE = 5 * 1024 * 1024  # 5 Mb
 LOGFILE_COUNT = 5
 
@@ -333,6 +339,9 @@ if SENTRY_DSN:
 # НАСТРОЙКИ КЭШИРОВАНИЯ
 # https://docs.djangoproject.com/en/5.2/topics/cache/
 # ======================================================================
+
+# Явно аннотируем тип переменной CACHES для mypy.
+CACHES: dict[str, Any]
 
 # Проверяем, запущен ли проект в режиме тестирования.
 # `pytest` автоматически добавляет 'test' в `sys.argv`.

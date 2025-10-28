@@ -2,7 +2,7 @@
 Общие фикстуры для всех тестов проекта.
 """
 
-from typing import Callable
+from typing import Any, Callable
 
 import pytest
 from django.contrib.auth.models import Group
@@ -18,7 +18,7 @@ def api_client() -> Client:
 
 
 @pytest.fixture
-def create_user_with_role(db) -> Callable:
+def create_user_with_role(db: Any) -> Callable[[str, str], User]:
     """
     Фабрика для создания пользователя и добавления его в группу.
     Предполагается, что группы были созданы миграцией.
