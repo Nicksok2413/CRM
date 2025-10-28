@@ -66,9 +66,13 @@ dmypy.json
 # Django
 media/
 
-
 # === Security certificates ===
 *.key
 *.pem
 *.crt
 *.csr
+
+# === PDM ===
+.pdm-python
+.pdm.toml
+__pypackages__/
