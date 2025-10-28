@@ -25,6 +25,8 @@ jobs:
           POSTGRES_PASSWORD: test_password
         # Опции для проверки "здоровья" контейнера.
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 5432:5432
             
     # Определяем "матрицу стратегий". Это позволяет легко запускать тесты
     # на нескольких версиях Python, чтобы убедиться в совместимости.
@@ -70,7 +72,7 @@ jobs:
           DB_NAME: test_db
           DB_USER: test_user
           DB_PASSWORD: test_password
-          DB_HOST: postgres
+          DB_HOST: 127.0.0.1
           DB_PORT: 5432
         # Вызываем кастомный скрипт `check`, который мы определили в `pyproject.toml`.
         # Он последовательно запустит ruff, mypy и pytest.
