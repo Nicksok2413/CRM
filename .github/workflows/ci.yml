@@ -15,7 +15,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    services:
+      postgres:
+        image: postgres:18
+        # Передаем переменные окружения в контейнер PostgreSQL для создания пользователя и базы данных.
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        # Опции для проверки "здоровья" контейнера.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --health-retries 5
+            
     # Определяем "матрицу стратегий". Это позволяет легко запускать тесты
     # на нескольких версиях Python, чтобы убедиться в совместимости.
     strategy:
@@ -56,12 +71,12 @@ jobs:
         env:
           # Предоставляем фиктивные переменные окружения, чтобы `settings.py` мог загрузиться.
           SECRET_KEY: "ci-secret-key-for-testing"
-          DEBUG: "True"
-          DB_NAME: "test_db"
-          DB_USER: "test_user"
-          DB_PASSWORD: "test_password"
-          DB_HOST: "localhost"
-          DB_PORT: "5432"
+          DEBUG: true
+          DB_NAME: test_db
+          DB_USER: test_user
+          DB_PASSWORD: test_password
+          DB_HOST: postgres
+          DB_PORT: 5432
         # Вызываем кастомный скрипт `check`, который мы определили в `pyproject.toml`.
         # Он последовательно запустит ruff, mypy и pytest.
         run: pdm run check
