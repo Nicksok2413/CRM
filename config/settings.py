@@ -340,6 +340,9 @@ if SENTRY_DSN:
 # https://docs.djangoproject.com/en/5.2/topics/cache/
 # ======================================================================
 
+REDIS_HOST = config("REDIS_HOST", default="127.0.0.1")
+REDIS_PORT = config("REDIS_PORT", default="6379", cast=int)
+
 # Явно аннотируем тип переменной CACHES для mypy.
 CACHES: dict[str, Any]
 
@@ -357,7 +360,7 @@ else:
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": "redis://127.0.0.1:6379/1",
+            "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },
@@ -374,10 +377,10 @@ CACHE_TTL = 60 * 10  # 10 минут
 
 # URL брокера сообщений. Celery будет отправлять сюда задачи.
 # Мы используем базу данных Redis №2, чтобы не смешивать задачи с кэшем.
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/2"
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
 
 # URL бэкенда для хранения результатов. Позволяет отслеживать статус задач.
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/2"
+CELERY_RESULT_BACKEND = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
 
 # Настройки для Celery Beat (планировщик периодических задач).
 CELERY_BEAT_SCHEDULE = {
