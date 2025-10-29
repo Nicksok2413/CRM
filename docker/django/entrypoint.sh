@@ -71,11 +71,11 @@ APP_GROUP=appgroup
 
 echo "-> (Entrypoint) Установка прав на volumes..."
 
-# Используем chown для изменения владельца точки монтирования тома.
+# Используем chown для изменения владельца точки монтирования томов.
 # Это нужно делать от root перед понижением привилегий.
+chown -R "${APP_USER}:${APP_GROUP}" /app/logs
 chown -R "${APP_USER}:${APP_GROUP}" /app/staticfiles
 chown -R "${APP_USER}:${APP_GROUP}" /app/uploads
-chown -R "${APP_USER}:${APP_GROUP}" /app/logs
 echo "   Права установлены."
 
 echo "-> (Entrypoint) Применение миграций базы данных..."

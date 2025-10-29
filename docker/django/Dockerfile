@@ -76,11 +76,11 @@ COPY --chown=appuser:appgroup . .
 # Устанавливаем права на выполнение entrypoint-скрипта.
 RUN chmod +x /entrypoint.sh
 
-# Создаем директории для логов, медиа и статики, и устанавливаем владельца.
+# Создаем директории для логов, статики и медиа, и устанавливаем владельца.
 # Эти директории будут перекрыты томами, но полезно иметь их с правильными правами в образе.
 RUN mkdir -p /logs && chown appuser:appgroup /logs
-RUN mkdir -p /uploads && chown appuser:appgroup /uploads
 RUN mkdir -p /staticfiles && chown appuser:appgroup /staticfiles
+RUN mkdir -p /uploads && chown appuser:appgroup /uploads
 
 # Сообщаем Docker, что контейнер будет слушать порт 8000.
 EXPOSE 8000
