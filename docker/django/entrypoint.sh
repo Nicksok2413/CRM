@@ -11,7 +11,7 @@ set -e
 
 # Функция для проверки готовности Базы Данных.
 wait_for_db() {
-    echo "-> (Entrypoint) Ожидание запуска PostgreSQL..."
+    echo "-> (Django Entrypoint) Ожидание запуска PostgreSQL..."
     python << END
 import os
 import psycopg
@@ -44,17 +44,17 @@ try:
     # Если после всех попыток подключиться не удалось, выходим с кодом ошибки 1.
     # Docker Compose увидит это и, в зависимости от настроек, перезапустит контейнер.
     if conn is None:
-        print("-> (Entrypoint) ОШИБКА: Не удалось подключиться к PostgreSQL после 30 секунд.", file=sys.stderr)
+        print("-> (Django Entrypoint) ОШИБКА: Не удалось подключиться к PostgreSQL после 30 секунд.", file=sys.stderr)
         sys.exit(1)
 
     # Закрываем соединение.
     conn.close()
 
 except KeyError as exc:
-    print(f"-> (Entrypoint) ОШИБКА: переменная окружения {exc} не установлена.", file=sys.stderr)
+    print(f"-> (Django Entrypoint) ОШИБКА: переменная окружения {exc} не установлена.", file=sys.stderr)
     sys.exit(1)
 except Exception as exc:
-    print(f"-> (Entrypoint) ОШИБКА: произошла ошибка при проверке БД (psycopg3): {exc}", file=sys.stderr)
+    print(f"-> (Django Entrypoint) ОШИБКА: произошла ошибка при проверке БД (psycopg3): {exc}", file=sys.stderr)
     sys.exit(1)
 END
 }
@@ -62,14 +62,14 @@ END
 # Ожидание готовности Базы Данных.
 wait_for_db
 
-echo "-> (Entrypoint) PostgreSQL успешно запущен."
+echo "-> (Django Entrypoint) PostgreSQL успешно запущен."
 
 # Установка прав на тома.
 # Указываем пользователя и группу, под которыми будет работать приложение.
 APP_USER=appuser
 APP_GROUP=appgroup
 
-echo "-> (Entrypoint) Установка прав на volumes..."
+echo "-> (Django Entrypoint) Установка прав на volumes..."
 
 # Используем chown для изменения владельца точки монтирования томов.
 # Это нужно делать от root перед понижением привилегий.
@@ -78,16 +78,16 @@ chown -R "${APP_USER}:${APP_GROUP}" /app/staticfiles
 chown -R "${APP_USER}:${APP_GROUP}" /app/uploads
 echo "   Права установлены."
 
-echo "-> (Entrypoint) Применение миграций базы данных..."
+echo "-> (Django Entrypoint) Применение миграций базы данных от пользователя ${APP_USER}..."
 # Применяем все недостающие миграции от имени appuser.
 # `--noinput` отключает все интерактивные запросы.
 su-exec "${APP_USER}" python manage.py migrate --noinput
 
-echo "-> (Entrypoint) Сбор статических файлов..."
+echo "-> (Django Entrypoint) Сбор статических файлов от пользователя ${APP_USER}..."
 # Собираем статику от имени appuser.
 # Собираем все статические файлы из приложений в единую директорию (STATIC_ROOT), чтобы Nginx мог их эффективно раздавать.
 su-exec "${APP_USER}" python manage.py collectstatic --noinput
 
 # Запускаем основной процесс Gunicorn от имени appuser.
-echo "-> (Entrypoint) Запуск основного процесса (Gunicorn)..."
+echo "-> (Django Entrypoint) Запуск основного процесса (Gunicorn) от пользователя ${APP_USER}..."
 exec su-exec "${APP_USER}" "$@"
