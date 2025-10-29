@@ -26,9 +26,6 @@ RUN mkdir -p /var/log/nginx && \
 RUN mkdir -p /etc/nginx/certs && \
     chown nginx:nginx /etc/nginx/certs
 
-# Создаем директорию для медиафайлов внутри контейнера и даем права пользователю nginx.
-RUN mkdir -p /var/www/uploads && chown nginx:nginx /var/www/uploads
-
 # Копируем entrypoint-скрипт в специальную директорию Docker для entrypoint-скриптов и делаем его исполняемым.
 COPY ./docker/nginx/entrypoint.sh /docker-entrypoint.d/10-ssl-cert-gen.sh
 RUN chmod +x /docker-entrypoint.d/10-ssl-cert-gen.sh
