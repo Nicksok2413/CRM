@@ -25,7 +25,7 @@ redis_host = os.environ.get("REDIS_HOST", "redis")
 redis_port = int(os.environ.get("REDIS_PORT", 6379))
 
 # Создаем клиент Redis. `decode_responses=True` для удобства отладки.
-r = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 # Пытаемся подключиться 30 раз с интервалом в 1 секунду.
 print("Попытка подключения к Redis...")
@@ -34,7 +34,7 @@ for attempt in range(30):
     try:
         # PING - это стандартный способ проверки "здоровья" Redis.
         # Если она возвращает 'PONG', значит, сервер готов.
-        if r.ping() == True:
+        if redis_client.ping() == True:
             print(f"   Попытка {attempt+1}/30: Redis запущен - получен ответ PONG.")
             sys.exit(0) # Успешный выход из Python-скрипта.
     except redis.exceptions.ConnectionError as exc:
@@ -56,6 +56,6 @@ echo "-> (Celery Worker Entrypoint) Redis запущен."
 # Указываем пользователя, от имени которого будет запущен процесс.
 APP_USER=appuser
 
-# Запускаем Celery Worker от имени appuser.
+# Запускаем Celery Worker от имени appuser, передавая команду из docker-compose.yml.
 echo "-> (Celery Worker Entrypoint) Запуск Celery Worker от пользователя ${APP_USER}..."
 exec su-exec "${APP_USER}" "$@"
