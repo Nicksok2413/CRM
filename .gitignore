@@ -1,6 +1,7 @@
 # === Python ===
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 *.egg
 .python-version
@@ -23,13 +24,19 @@ ENV/
 database/
 *.sqlite
 *.sqlite3
+db.sqlite3-journal
 *.db
 *.dump
 
 # === OS files ===
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+# Windows
 Thumbs.db
-desktop.ini
+ehthumbs.db
+Desktop.ini
 
 # === IDE ===
 # PyCharm
@@ -38,7 +45,7 @@ desktop.ini
 *.ipr
 *.iws
 # VS Code (опционально)
-# .vscode/
+.vscode/
 
 # === Testing / coverage reports ===
 htmlcov/
@@ -53,18 +60,28 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+pytestdebug.log
 
-# === Logging ===
-logs/
+# === Ruff ===
+.ruff_cache/
 
 # === mypy ===
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# === Project Specific ===
-# Django
-media/
+# === Celery ===
+celerybeat-schedule
+*.pid
+
+# === Docker ===
+docker-compose.override.yml
+docker-compose.local.yml
+postgres_data/
+redis_data/
+clamav_data/
+certs_data/
+nginx_log_data/
 
 # === Security certificates ===
 *.key
@@ -73,6 +90,17 @@ media/
 *.csr
 
 # === PDM ===
+.pdm-build/
 .pdm-python
 .pdm.toml
 __pypackages__/
+
+# Django
+/uploads/
+/staticfiles/
+/logs/
+
+# === Others ===
+/node_modules/
+/docs/_build/
+/site/

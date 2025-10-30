@@ -8,46 +8,9 @@
 # завершится с ошибкой, скрипт немедленно прекратит выполнение.
 set -e
 
-# Ожидание зависимостей.
-# Планировщику, как и worker'у, для работы нужен брокер сообщений. В нашем случае это Redis.
-
-# Функция для проверки готовности Redis.
-wait_for_redis() {
-    echo "-> (Celery Beat Entrypoint) Ожидание запуска Redis..."
-    python << END
-import os
-import sys
-import time
-import redis
-
-# Получаем хост и порт из переменных окружения.
-redis_host = os.environ.get("REDIS_HOST", "redis")
-redis_port = int(os.environ.get("REDIS_PORT", 6379))
-
-# Создаем клиент Redis. `decode_responses=True` для удобства отладки.
-redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
-
-# Пытаемся подключиться 30 раз с интервалом в 1 секунду.
-print("Попытка подключения к Redis...")
-
-for attempt in range(30):
-    try:
-        # PING - это стандартный способ проверки "здоровья" Redis.
-        # Если она возвращает 'PONG', значит, сервер готов.
-        if redis_client.ping() == True:
-            print(f"   Попытка {attempt+1}/30: Redis запущен - получен ответ PONG.")
-            sys.exit(0) # Успешный выход из Python-скрипта.
-    except redis.exceptions.ConnectionError as exc:
-        print(f"   Попытка {attempt+1}/30: Redis недоступен, ожидание... ({exc})")
-        time.sleep(1)
-
-print("-> (Celery Beat Entrypoint) ОШИБКА: Не удалось подключиться к Redis после 30 секунд.", file=sys.stderr)
-sys.exit(1) # Выход с ошибкой, если подключиться не удалось.
-END
-}
-
-# Ожидание готовности Redis.
-wait_for_redis
+# Планировщику, как и worker'у, для работы нужен брокер сообщений (Redis).
+# Вызываем скрипт для ожидания готовности внешних сервисов, передавая ему, какие сервисы нужно ждать.
+/wait-for-services.sh redis
 
 echo "-> (Celery Beat Entrypoint) Redis запущен."
 

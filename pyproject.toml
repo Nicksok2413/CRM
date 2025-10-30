@@ -83,6 +83,8 @@ dependencies = [
     "phonenumberslite==9.0.17",
     "django-clamd==1.0.0",
     "sentry-sdk[django]==2.42.1",
+    "gunicorn>=23.0.0",
+    "gevent>=25.9.1",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"

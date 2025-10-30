@@ -1,0 +1,92 @@
+# === Docker ===
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+
+# === Volumes ===
+logs/
+uploads/
+staticfiles/
+postgres_data/
+redis_data/
+clamav_data/
+certs_data/
+nginx_log_data/
+
+# === OS ===
+*.log
+*.pot
+*.swo
+*.swp
+*.DS_Store
+Thumbs.db
+
+# === Git ===
+.git
+.gitignore
+.gitattributes
+
+# === Python ===
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# === Environment ===
+.env
+.env.*
+.venv
+venv
+env
+ENV
+
+# === Database ===
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+# Тестовая БД, если создавалась локально
+test.db
+
+# === IDE ===
+.idea
+# VS Code (опционально)
+.vscode
+
+# === Security certificates ===
+*.key
+*.pem
+
+# === Testing / coverage reports ===
+.pytest_cache
+.pytest_cache/
+.coverage
+htmlcov
+tests/
+test.db
+
+# === mypy ===
+.mypy_cache/
+
+# === Ruff ===
+.ruff_cache/
+
+# === Celery ===
+celerybeat-schedule
+*.pid
+
+# === PDM ===
+__pypackages__/
+.pdm-build/
+.pdm-python
+
+# `pdm.lock` нужен на этапе builder, но не в финальном образе.
+# Исключаем его здесь, чтобы он не попал в финальный `COPY . .`.
+pdm.lock
+
+
+# === Other ===
+README.md
+*.md
