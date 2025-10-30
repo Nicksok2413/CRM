@@ -122,7 +122,7 @@ services:
       context: .  # Контекст сборки - корень проекта
       dockerfile: docker/nginx/Dockerfile  # Путь к Dockerfile для nginx
     container_name: crm_nginx
-    # `ports` "пробрасывает" порты из контейнера на хост-машину, делая сайт доступным извне.
+    # Пробрасываем порты из контейнера на хост-машину, делая сайт доступным извне.
     ports:
       - "80:80"   # HTTP
       - "443:443" # HTTPS
