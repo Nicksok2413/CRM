@@ -7,9 +7,10 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data/ # Монтируем том для данных postgres?н
+      - postgres_data:/var/lib/postgresql/data/ # Монтируем том для БД?
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ] # Экранируем $ для shell
+      # Проверяет, готова ли БД принимать соединения (экранируем $ для shell).
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -21,11 +22,12 @@ services:
   redis:
     image: redis:7-alpine
     container_name: crm_redis
-    # Команда для персистентности и логирования.
+    # Команда для персистентности (сохранять на диск каждые 60с при 1 изменении) и логирования.
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data  # Монтируем том для сохранения dump.rdb
     healthcheck:
+      # Проверяет, отвечает ли Redis на команду PING.
       test: [ "CMD", "redis-cli", "-h", "localhost", "ping" ]
       interval: 5s
       timeout: 5s
@@ -40,7 +42,7 @@ services:
     container_name: crm_clamav
     user: clamav  # Запускаем от непривилегированного пользователя clamav
     volumes:
-      - clamav_data:/var/lib/clamav  # Монтируем том для данных clamav?
+      - clamav_data:/var/lib/clamav  # Монтируем том для хранения скачанных антивирусных баз
     restart: unless-stopped
     networks:
       - crm_network
@@ -136,7 +138,7 @@ services:
     networks:
       - crm_network
 
-# Тома для хранения персистентных данных?
+# Определяем все тома для хранения персистентных данных?
 volumes:
   postgres_data:
     driver: local
@@ -155,7 +157,7 @@ volumes:
   nginx_log_data:
     driver: local
 
-# Создаем выделенную bridge-сеть для наших сервисов.
+# Определяем общую сеть для всех сервисов.
 # Это обеспечивает изоляцию и позволяет контейнерам общаться друг с другом по именам.
 networks:
   crm_network:
