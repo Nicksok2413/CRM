@@ -27,6 +27,12 @@ echo "-> (Django Entrypoint) Установка прав на volumes..."
 chown -R "${APP_USER}:${APP_GROUP}" /app/logs
 chown -R "${APP_USER}:${APP_GROUP}" /app/staticfiles
 chown -R "${APP_USER}:${APP_GROUP}" /app/uploads
+
+# Создаем пустые файлы логов от имени root, а затем меняем их владельца.
+# Это гарантирует, что Gunicorn, запущенный от appuser, сможет в них писать.
+touch /app/logs/gunicorn_access.log /app/logs/gunicorn_error.log
+chown "${APP_USER}:${APP_GROUP}" /app/logs/gunicorn_*.log
+
 echo "   Права установлены."
 
 echo "-> (Django Entrypoint) Применение миграций базы данных от пользователя ${APP_USER}..."
