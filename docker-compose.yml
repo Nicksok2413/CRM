@@ -1,0 +1,162 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: crm_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Монтируем том для данных postgres?н
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ] # Экранируем $ для shell
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s  # Даем время на запуск Postgres перед первой проверкой
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: crm_redis
+    # Команда для персистентности и логирования.
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data  # Монтируем том для сохранения dump.rdb
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-h", "localhost", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s  # Даем время на запуск Redis перед первой проверкой
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  clamav:
+    image: clamav/clamav:latest
+    container_name: crm_clamav
+    user: clamav  # Запускаем от непривилегированного пользователя clamav
+    volumes:
+      - clamav_data:/var/lib/clamav  # Монтируем том для данных clamav?
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  django:
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: docker/django/Dockerfile  # Путь к Dockerfile для django
+    container_name: crm_django_web
+    # Команда, которая будет передана в `exec "$@"` в entrypoint.sh.
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    env_file: .env  # Передаем все переменные из .env в контейнер
+    volumes:
+      - log_data:/app/logs  # Монтируем том для логов
+      - media_data:/app/uploads  # Монтируем том для медиа-файлов
+      - static_data:/app/staticfiles  # Монтируем том для статики
+    expose:
+      - 8000  # Открываем порт только внутри сети Docker
+    depends_on:
+      db:
+        # Запускаем только после того, как db станет healthy.
+        condition: service_healthy
+      redis:
+        # Запускаем только после того, как redis станет healthy.
+        condition: service_healthy
+      clamav:
+        # Для clamav достаточно дождаться запуска.
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  celery_worker:
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: docker/django/Dockerfile  # Путь к Dockerfile для django
+    container_name: crm_celery_worker
+    # Используем entrypoint для worker'а.
+    entrypoint: /docker/celery/worker/entrypoint.sh
+    # Переопределяем команду, которую запустит entrypoint.
+    command: celery -A config.celery worker --loglevel=info
+    env_file: .env  # Передаем все переменные из .env в контейнер
+    volumes:
+      - log_data:/app/logs  # Монтируем том для логов
+    depends_on:
+      redis:
+        # Запускаем только после того, как redis станет healthy.
+        condition: service_healthy
+      db:
+        # Worker'у нужен доступ к БД для работы с моделями.
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  celery_beat:
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: docker/django/Dockerfile  # Путь к Dockerfile для django
+    container_name: crm_celery_beat
+    # Используем entrypoint для планировщика.
+    entrypoint: /docker/celery/beat/entrypoint.sh
+    # Переопределяем команду, которую запустит entrypoint (с указанием pid-файла).
+    command: celery -A config.celery beat --loglevel=info --pidfile=/app/celerybeat.pid
+    env_file: .env  # Передаем все переменные из .env в контейнер
+    volumes:
+      - log_data:/app/logs  # Монтируем том для логов
+    depends_on:
+      redis:
+        # Запускаем только после того, как redis станет healthy.
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  nginx:
+    build:
+      context: .  # Контекст сборки - корень проекта
+      dockerfile: docker/nginx/Dockerfile  # Путь к Dockerfile для nginx
+    container_name: crm_nginx
+    # `ports` "пробрасывает" порты из контейнера на хост-машину, делая сайт доступным извне.
+    ports:
+      - "80:80"   # HTTP
+      - "443:443" # HTTPS
+    volumes:
+      - certs_data:/etc/nginx/certs  # Монтируем том для хранения сгенерированных сертификатов
+      - media_data:/app/uploads:ro  # Монтируем том для медиа-файлов (только для чтения)
+      - nginx_log_data:/var/log/nginx  # Монтируем том для логов Nginx
+      - static_data:/app/staticfiles:ro  # Монтируем том для статики (только для чтения)
+    depends_on:
+      - django  # Запускаем Nginx после django
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+# Тома для хранения персистентных данных?
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  clamav_data:
+    driver: local
+  log_data:
+    driver: local
+  media_data:
+    driver: local
+  static_data:
+    driver: local
+  certs_data:
+    driver: local
+  nginx_log_data:
+    driver: local
+
+# Создаем выделенную bridge-сеть для наших сервисов.
+# Это обеспечивает изоляцию и позволяет контейнерам общаться друг с другом по именам.
+networks:
+  crm_network:
+    driver: bridge
