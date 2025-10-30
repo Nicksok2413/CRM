@@ -46,14 +46,6 @@ Desktop.ini
 *.iws
 # VS Code (опционально)
 .vscode/
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
-# Atom
-.atom/
-# Eclipse
-.project
-.pydevproject
 
 # === Testing / coverage reports ===
 htmlcov/
