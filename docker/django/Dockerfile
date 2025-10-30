@@ -62,6 +62,13 @@ COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/su-exec
 # Это делает все библиотеки доступными для Python "из коробки", без активации .venv.
 COPY --from=builder /app/__pypackages__/3.12/lib/. /usr/local/lib/python3.12/site-packages/
 
+# Копируем entrypoint-скрипты.
+COPY ./docker/django/entrypoint.sh /entrypoint.sh
+COPY ./docker/scripts/wait-for-services.sh /wait-for-services.sh
+
+# Устанавливаем права на выполнение entrypoint-скриптов.
+RUN chmod +x /entrypoint.sh /wait-for-services.sh
+
 # Создаем системную группу `appgroup` и системного non-root пользователя `appuser`.
 # Это нужно для безопасности, чтобы не запускать приложение от root.
 # `--no-create-home` — не создавать домашнюю директорию.
@@ -72,9 +79,6 @@ RUN chown appuser:appgroup /app
 
 # Копируем весь код нашего приложения, сразу устанавливая правильного владельца.
 COPY --chown=appuser:appgroup . .
-
-# Устанавливаем права на выполнение entrypoint-скрипта.
-RUN chmod +x /entrypoint.sh
 
 # Сообщаем Docker, что контейнер будет слушать порт 8000.
 EXPOSE 8000
