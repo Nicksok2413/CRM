@@ -53,9 +53,9 @@ def test_ad_campaign_statistic_view(api_client, create_user_with_role, statistic
     # 1. ARRANGE (Подготовка данных).
 
     # Создаем пользователя и добавляем его в группу "Маркетолог".
-    create_user_with_role(username="marketer", role_name="Маркетолог")
-
-    api_client.login(username="marketer", password="password")
+    marketer = create_user_with_role(username="marketer", role_name="Маркетолог")
+    
+    api_client.force_login(marketer)
 
     # Получаем ID нашей целевой кампании из фикстуры `statistic_view_data`.
     target_campaign_pk = statistic_view_data
