@@ -66,15 +66,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # === Сторонние приложения ===
-    # Безопасность.
-    "axes",
-    # Стилизация форм
-    "crispy_bootstrap5",
-    "crispy_forms",
-    # Фильтрация.
-    "django_filters",
-    # Объектные права доступа.
-    "guardian",
+    "axes",  # Безопасность
+    "crispy_bootstrap5",  # Стилизация форм
+    "crispy_forms",  # Стилизация форм
+    "django_filters",  # Фильтрация
+    "django_prometheus",  # Prometheus
+    "guardian",  # Объектные права доступа
     # === Приложения ===
     "apps.advertisements.apps.AdvertisementsConfig",
     "apps.common.apps.CommonConfig",
@@ -86,6 +83,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -94,6 +92,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

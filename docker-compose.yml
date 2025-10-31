@@ -122,17 +122,54 @@ services:
       context: .  # Контекст сборки - корень проекта
       dockerfile: docker/nginx/Dockerfile  # Путь к Dockerfile для nginx
     container_name: crm_nginx
-    # Пробрасываем порты из контейнера на хост-машину, делая сайт доступным извне.
-    ports:
-      - "80:80"   # HTTP
-      - "443:443" # HTTPS
     volumes:
       - certs_data:/etc/nginx/certs  # Монтируем том для хранения сгенерированных сертификатов
       - media_data:/app/uploads:ro  # Монтируем том для медиа-файлов (только для чтения)
       - nginx_log_data:/var/log/nginx  # Монтируем том для логов Nginx
       - static_data:/app/staticfiles:ro  # Монтируем том для статики (только для чтения)
+    # Пробрасываем порты из контейнера на хост-машину, делая сайт доступным извне.
+    ports:
+      - "80:80"   # HTTP
+      - "443:443" # HTTPS
     depends_on:
       - django  # Запускаем Nginx после django
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: crm_prometheus
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro  # Монтируем конфиг (только для чтения)
+      - prometheus_data:/prometheus  # Монтируем том для хранения собранных метрик
+    # Передаем путь к конфигу.
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"  # Пробрасываем порт для доступа к UI Prometheus
+    depends_on:
+      - django  # Запускаем Prometheus после django
+    restart: unless-stopped
+    networks:
+      - crm_network
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: crm_grafana
+    volumes:
+      - grafana_data:/var/lib/grafana  # Монтируем том для хранения данных Grafana (настройки, пользователи, дашборды)
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/:ro  # Монтируем provisioning для автонастройки при старте (только для чтения)
+      - ./docker/grafana/dashboards/:/var/lib/grafana/dashboards/:ro  # Монтируем директорию с JSON дашбордами (только для чтения)
+    environment:
+      # Устанавливаем логин/пароль для админа Grafana.
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"  # Отключить регистрацию новых пользователей
+    ports:
+      - "3000:3000" # Пробрасываем порт для доступа к UI Grafana
+    depends_on:
+      - prometheus  # Запускаем Grafana после Prometheus
     restart: unless-stopped
     networks:
       - crm_network
@@ -154,6 +191,10 @@ volumes:
   certs_data:
     driver: local
   nginx_log_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
 
 # Определяем общую сеть для всех сервисов.
