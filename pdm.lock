@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:56bb707cbb2b9647c076dd7791fb02e9d12d8f282c0c4de3ef1a90cf847dfdff"
+content_hash = "sha256:adc1ebe6b6007e33d070185bf951fcbcbf393c36aa3e363967fa63cda01c2d06"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -236,6 +236,21 @@ dependencies = [
 files = [
     {file = "django-5.2.7-py3-none-any.whl", hash = "sha256:59a13a6515f787dec9d97a0438cd2efac78c8aca1c80025244b0fe507fe0754b"},
     {file = "django-5.2.7.tar.gz", hash = "sha256:e0f6f12e2551b1716a95a63a1366ca91bbcd7be059862c1b18f989b1da356cdd"},
+]
+
+[[package]]
+name = "django-axes"
+version = "8.0.0"
+requires_python = ">=3.9"
+summary = "Keep track of failed login attempts in Django-powered sites."
+groups = ["default"]
+dependencies = [
+    "asgiref>=3.6.0",
+    "django>=4.2",
+]
+files = [
+    {file = "django_axes-8.0.0-py3-none-any.whl", hash = "sha256:7ddc55f21b704b7e9b3e793a75deac01ff16cb67f561649b04336e1e96980035"},
+    {file = "django_axes-8.0.0.tar.gz", hash = "sha256:f95b6ae67fd77d44cc688818cef174914c4ad98c48daf65020b6f03f37220e45"},
 ]
 
 [[package]]

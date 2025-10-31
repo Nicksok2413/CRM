@@ -1,0 +1,21 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="text-center my-5">
+    <h1 class="display-1 fw-bold text-warning">Доступ заблокирован!</h1>
+    <p class-="fs-3">
+        <span class="text-danger">Слишком много неудачных попыток входа.</span>
+    </p>
+    <p class="lead">
+        В целях безопасности ваша возможность входа временно заблокирована.
+    </p>
+
+    {% if cooloff_time %}
+    <p class="text-muted">
+        Пожалуйста, попробуйте снова через {{ cooloff_time|time:"i минут s секунд" }}.
+    </p>
+    {% endif %}
+
+    <a href="{% url 'users:index' %}" class="btn btn-primary mt-3">Вернуться на главную</a>
+</div>
+{% endblock %}

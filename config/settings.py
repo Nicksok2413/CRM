@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 from sys import argv
 from typing import Any
@@ -64,6 +65,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # === Сторонние приложения ===
+    # Безопасность.
+    "axes",
+    # Стилизация форм
+    "crispy_bootstrap5",
+    "crispy_forms",
+    # Фильтрация.
+    "django_filters",
+    # Объектные права доступа.
+    "guardian",
     # === Приложения ===
     "apps.advertisements.apps.AdvertisementsConfig",
     "apps.common.apps.CommonConfig",
@@ -72,14 +83,6 @@ INSTALLED_APPS = [
     "apps.leads.apps.LeadsConfig",
     "apps.products.apps.ProductsConfig",
     "apps.users.apps.UsersConfig",
-    # === Сторонние приложения ===
-    # Стилизация форм.
-    "crispy_bootstrap5",
-    "crispy_forms",
-    # Фильтрация.
-    "django_filters",
-    # Объектные права доступа.
-    "guardian",
 ]
 
 MIDDLEWARE = [
@@ -90,6 +93,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -156,6 +160,64 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+# ======================================================================
+# НАСТРОЙКИ АУТЕНТИФИКАЦИИ И АВТОРИЗАЦИИ.
+# ======================================================================
+
+# Указываем Django использовать кастомную модель пользователя.
+AUTH_USER_MODEL = "users.User"
+
+# Указываем Django, как проверять логин/пароль и как загружать права доступа.
+AUTHENTICATION_BACKENDS = [
+    # AxesBackend перехватывает попытки входа и управляет блокировками.
+    "axes.backends.AxesBackend",
+    # ModelBackend выполняет стандартную проверку логина/пароля по базе данных.
+    "django.contrib.auth.backends.ModelBackend",
+    # ObjectPermissionBackend от guardian добавляет проверку прав на уровне объектов.
+    "guardian.backends.ObjectPermissionBackend",
+]
+
+# URL для перенаправления неавторизованных пользователей.
+LOGIN_URL = "/accounts/login/"
+
+# URL, на который пользователь будет перенаправлен после успешного входа.
+LOGIN_REDIRECT_URL = "/"
+
+# URL, на который пользователь будет перенаправлен после выхода.
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+
+# ======================================================================
+# НАСТРОЙКИ DJANGO-AXES (ЗАЩИТА ОТ БРУТФОРСА).
+# ======================================================================
+
+# Количество неудачных попыток до блокировки.
+AXES_FAILURE_LIMIT = 5
+
+# Период, за который считаются неудачные попытки.
+# Например, 5 попыток за 10 минут.
+AXES_COOLOFF_TIME = timedelta(minutes=10)
+
+# Как блокировать: по IP-адресу, по имени пользователя или по обоим.
+# ["ip_address", "username"] - самый надежный вариант.
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+
+# Использовать HTTP-заголовок X-Forwarded-For, если он есть.
+# Это критически важно, так как django работает за Nginx.
+AXES_BEHIND_REVERSE_PROXY = True
+
+# Имя мета-заголовка, в котором Nginx передает реальный IP.
+# 'HTTP_X_FORWARDED_FOR' - стандартное значение.
+AXES_REVERSE_PROXY_HEADER = "HTTP_X_FORWARDED_FOR"
+
+# Логировать каждую попытку входа (успешную и неуспешную) в БД.
+# Полезно для аудита, но может создавать много записей.
+AXES_ENABLE_ACCESS_LOG = True
+
+# Шаблон, который будет показан заблокированному пользователю.
+AXES_LOCKOUT_TEMPLATE = "axes/lockout.html"
 
 
 # ======================================================================
@@ -231,8 +293,8 @@ if not LOGS_DIR.exists():
 
 LOGFILE_NAME = LOGS_DIR / "info.log"
 LOGFILE_ERROR_NAME = LOGS_DIR / "error.log"
-LOGFILE_SIZE = 5 * 1024 * 1024  # 5 Mb
-LOGFILE_COUNT = 5
+LOGFILE_SIZE = config("LOGFILE_SIZE", default="5", cast=int) * 1024 * 1024  # 5 Mb
+LOGFILE_COUNT = config("LOGFILE_COUNT", default="5", cast=int)
 
 
 LOGGING = {
@@ -393,15 +455,24 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+
 # ======================================================================
 # НАСТРОЙКИ ЭЛЕКТРОННОЙ ПОЧТЫ.
 # ======================================================================
 
-# В режиме разработки не будем отправляем реальные письма.
-# Вместо этого Django будет выводить их содержимое в консоль.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+if DEBUG:
+    # В режиме разработки не отправляем реальные письма, а выводим их содержимое в консоль.
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    # В продакшен-режиме (DEBUG=False) используем реальный SMTP.
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = config("EMAIL_HOST")
+    EMAIL_PORT = config("EMAIL_PORT", cast=int)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 
-# Читаем email отправителя из .env. Если там его нет, используем значение по умолчанию.
+# Email отправителя по умолчанию.
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="crm-no-reply@example.com")
 
 
@@ -425,30 +496,6 @@ CLAMD_TIMEOUT = 5
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-# ======================================================================
-# НАСТРОЙКИ АУТЕНТИФИКАЦИИ И АВТОРИЗАЦИИ.
-# ======================================================================
-
-# Указываем Django использовать кастомную модель пользователя.
-AUTH_USER_MODEL = "users.User"
-
-# Указываем Django, как проверять логин/пароль и как загружать права доступа.
-AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",
-    # Добавляем бэкенд от guardian. Он расширяет стандартный, добавляя проверку прав на уровне объектов.
-    "guardian.backends.ObjectPermissionBackend",
-]
-
-# URL для перенаправления неавторизованных пользователей.
-LOGIN_URL = "/accounts/login/"
-
-# URL, на который пользователь будет перенаправлен после успешного входа.
-LOGIN_REDIRECT_URL = "/"
-
-# URL, на который пользователь будет перенаправлен после выхода.
-LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 
 # ======================================================================
