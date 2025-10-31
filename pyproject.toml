@@ -85,6 +85,7 @@ dependencies = [
     "sentry-sdk[django]==2.42.1",
     "gunicorn>=23.0.0",
     "gevent>=25.9.1",
+    "django-axes>=8.0.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
