@@ -143,9 +143,9 @@ services:
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro  # Монтируем конфиг (только для чтения)
       - prometheus_data:/prometheus  # Монтируем том для хранения собранных метрик
-    # Передаем путь к конфигу.
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/etc/prometheus/prometheus.yml'  # Передаем путь к конфигу
+      - '--web.enable-lifecycle'  # Разрешаем перезагрузку конфига "на лету", без необходимости перезапускать контейнер
     ports:
       - "9090:9090"  # Пробрасываем порт для доступа к UI Prometheus
     depends_on:
@@ -160,11 +160,9 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana  # Монтируем том для хранения данных Grafana (настройки, пользователи, дашборды)
       - ./docker/grafana/provisioning/:/etc/grafana/provisioning/:ro  # Монтируем provisioning для автонастройки при старте (только для чтения)
-      - ./docker/grafana/dashboards/:/var/lib/grafana/dashboards/:ro  # Монтируем директорию с JSON дашбордами (только для чтения)
     environment:
-      # Устанавливаем логин/пароль для админа Grafana.
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}  # admin - по умолчанию
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # admin - по умолчанию
       GF_USERS_ALLOW_SIGN_UP: "false"  # Отключить регистрацию новых пользователей
     ports:
       - "3000:3000" # Пробрасываем порт для доступа к UI Grafana
