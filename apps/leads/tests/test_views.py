@@ -31,7 +31,7 @@ def test_lead_list_view_object_permissions(api_client, create_user_with_role):
 
     # 2. ACT & ASSERT для Менеджера 1.
 
-    api_client.login(username="manager1", password="password")
+    api_client.force_login(manager1)
     response = api_client.get(url)
 
     assert response.status_code == 200
@@ -47,7 +47,7 @@ def test_lead_list_view_object_permissions(api_client, create_user_with_role):
 
     # 3. ACT & ASSERT для Менеджера 2.
 
-    api_client.login(username="manager2", password="password")
+    api_client.force_login(manager2)
     response = api_client.get(url)
 
     assert response.status_code == 200
@@ -80,7 +80,7 @@ def test_lead_list_view_for_global_perms(api_client, create_user_with_role):
     PotentialClientFactory(manager=manager2)
 
     # Логинимся как оператор.
-    api_client.login(username="operator", password="password")
+    api_client.force_login(operator)
 
     # 2. ACT (Выполнение действия).
 
