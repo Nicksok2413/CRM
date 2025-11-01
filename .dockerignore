@@ -82,11 +82,6 @@ __pypackages__/
 .pdm-build/
 .pdm-python
 
-# `pdm.lock` нужен на этапе builder, но не в финальном образе.
-# Исключаем его здесь, чтобы он не попал в финальный `COPY . .`.
-pdm.lock
-
-
 # === Other ===
 README.md
 *.md
