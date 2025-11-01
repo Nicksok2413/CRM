@@ -201,7 +201,7 @@ AXES_COOLOFF_TIME = timedelta(minutes=10)
 
 # Как блокировать: по IP-адресу, по имени пользователя или по обоим.
 # ["ip_address", "username"] - самый надежный вариант.
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+AXES_LOCKOUT_PARAMETERS = ["ip_address", "username"]
 
 # Использовать HTTP-заголовок X-Forwarded-For, если он есть.
 # Это критически важно, так как django работает за Nginx.

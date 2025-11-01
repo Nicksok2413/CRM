@@ -61,6 +61,10 @@ django_settings_module = "config.settings"
 [tool.pdm]
 distribution = false
 
+[tool.pdm.strategy]
+save = "compatible"
+use_venv = true
+
 [project]
 name = "CRM"
 version = "0.1.0"
