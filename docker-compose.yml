@@ -160,6 +160,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana  # Монтируем том для хранения данных Grafana (настройки, пользователи, дашборды)
       - ./docker/grafana/provisioning/:/etc/grafana/provisioning/:ro  # Монтируем provisioning для автонастройки при старте (только для чтения)
+      - ./docker/grafana/dashboards/:/etc/grafana/provisioning/dashboards/:ro  # Монтируем директорию с JSON дашбордами для provisioning (только для чтения)
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}  # admin - по умолчанию
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # admin - по умолчанию
