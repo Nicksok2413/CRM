@@ -31,4 +31,4 @@ APP_USER=appuser
 # Запускаем Celery Beat от имени appuser, передавая команду из docker-compose.yml.
 echo "-> (Celery Beat Entrypoint) Запуск Celery Beat от пользователя ${APP_USER}..."
 #exec su-exec "${APP_USER}" "$@"
-exec su-exec "${APP_USER}" celery -A config.celery beat --loglevel=info --pidfile=/app/celerybeat.pid
+exec su-exec "${APP_USER}" /app/lib/celery -A config.celery beat --loglevel=info --pidfile=/app/celerybeat.pid
