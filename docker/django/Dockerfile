@@ -5,9 +5,16 @@
 FROM python:3.12-slim as builder
 
 # Устанавливаем системные зависимости, которые нужны только для сборки:
+# - curl: для установки PDM.
 # - build-essential, wget, ca-certificates: для компиляции su-exec.
+# `rm -rf /var/lib/apt/lists/*` — удаляем списки пакетов.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential wget ca-certificates
+    apt-get install -y --no-install-recommends \
+        curl \
+        build-essential \
+        wget \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Компилируем su-exec — утилиту для безопасного понижения привилегий с root до обычного пользователя.
 RUN wget -O su-exec.tar.gz https://github.com/ncopa/su-exec/archive/master.tar.gz && \
@@ -19,24 +26,33 @@ RUN wget -O su-exec.tar.gz https://github.com/ncopa/su-exec/archive/master.tar.g
     rm -rf su-exec.tar.gz su-exec-master
 
 # Устанавливаем PDM.
-RUN pip install pdm
+RUN curl -sSL https://pdm-project.org/install-pdm.py | python3 -
+# Добавляем путь к pdm в переменную окружения PATH.
+ENV PATH="/root/.local/bin:${PATH}"
 
 # Устанавливаем рабочую директорию.
 WORKDIR /app
 
-# Создаем виртуальное окружение внутри рабочей директории.
-# PDM будет использовать его благодаря `use_venv = true` в pyproject.toml
-ENV VIRTUAL_ENV=/app/.venv
-RUN python3 -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# Глобально отключаем создание виртуальных окружений для PDM.
+# RUN pdm config python.use_venv false
+# Создаем директорию, чтобы у PDM не было сомнений.
 
 # Копируем только файлы, определяющие зависимости.
 # Этот слой будет кэшироваться и не будет пересобираться, пока pyproject.toml или pdm.lock не изменятся.
 COPY pyproject.toml pdm.lock ./
 
-# Устанавливаем production-зависимости в созданное .venv.
-# Пакеты будут установлены в __pypackages__, что изолировано внутри этого этапа сборки.
+# Устанавливаем production-зависимости.
 RUN pdm install --prod --no-editable
+
+# --- ИСПРАВЛЕННАЯ КОНТРОЛЬНАЯ ПРОВЕРКА ---
+# Проверяем наличие директории site-packages вместо lib
+RUN ls -l /app/__pypackages__/3.12/site-packages/
+
+
+# # --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
+# # Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
+# # Мы сможем подключиться к нему и посмотреть, что внутри.
+# CMD ["/bin/sh", "-c", "sleep 1d"]
 
 
 # ==============================================================================
@@ -46,11 +62,9 @@ RUN pdm install --prod --no-editable
 FROM python:3.12-slim
 
 # Устанавливаем только те системные пакеты, которые необходимы для работы приложения:
-# - PDM нужен для запуска команд через `pdm run`.
 # - libpq-dev: для работы драйвера psycopg.
 # `rm -rf /var/lib/apt/lists/*` — для уменьшения размера образа.
 RUN apt-get update && \
-    pip install pdm && \
     apt-get install -y --no-install-recommends libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
@@ -59,6 +73,8 @@ RUN apt-get update && \
 ENV PYTHONUNBUFFERED 1
 # Не создавать .pyc файлы.
 ENV PYTHONDONTWRITEBYTECODE 1
+# Добавляем путь к пакетам в PYTHONPATH, чтобы Python их нашел.
+ENV PYTHONPATH="/app/lib"
 
 # Устанавливаем рабочую директорию.
 WORKDIR /app
@@ -66,9 +82,9 @@ WORKDIR /app
 # Копируем скомпилированный `su-exec` из этапа "builder".
 COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/su-exec
 
-# Копируем установленные Python-зависимости из этапа "builder" в системный `site-packages`.
+# Копируем установленные Python-зависимости из этапа "builder" в отдельную папку /app/lib.
 # Это делает все библиотеки доступными для Python "из коробки", без активации .venv.
-COPY --from=builder /app/.venv/lib/python3.12/site-packages/. /usr/local/lib/python3.12/site-packages/
+COPY --from=builder /app/__pypackages__/3.12/site-packages/. /app/lib/
 
 # Копируем entrypoint-скрипты.
 COPY ./docker/celery/beat/entrypoint.sh /docker/celery/beat/entrypoint.sh

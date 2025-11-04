@@ -22,4 +22,4 @@ APP_USER=appuser
 # Запускаем Celery Worker от имени appuser, передавая команду из docker-compose.yml.
 echo "-> (Celery Worker Entrypoint) Запуск Celery Worker от пользователя ${APP_USER}..."
 #exec su-exec "${APP_USER}" "$@"
-exec pdm run su-exec "${APP_USER}" celery -A config.celery worker --loglevel=info
+exec su-exec "${APP_USER}" celery -A config.celery worker --loglevel=info
