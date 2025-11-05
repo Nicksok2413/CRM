@@ -33,13 +33,13 @@ SECRET_KEY = config("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
 
+
 # ======================================================================
-# НАСТРОЙКИ БЕЗОПАСНОСТИ ДЛЯ РАБОТЫ ЗА ПРОКСИ-СЕРВЕРОМ (NGINX)
+# НАСТРОЙКИ БЕЗОПАСНОСТИ ДЛЯ РАБОТЫ ЗА ПРОКСИ-СЕРВЕРОМ (NGINX).
 # ======================================================================
 
-# Говорим Django доверять заголовку X-Forwarded-Proto, который
-# устанавливает Nginx. Это позволяет правильно определять,
-# работает ли соединение по HTTP или HTTPS.
+# Говорим Django доверять заголовку X-Forwarded-Proto, который устанавливает Nginx.
+# Это позволяет правильно определять, работает ли соединение по HTTP или HTTPS.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Устанавливаем флаг 'secure' для сессионных кук, если DEBUG=False.
@@ -47,15 +47,12 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 
 # Устанавливаем флаг 'secure' для CSRF-кук, если DEBUG=False.
-# Это и есть решение нашей проблемы.
+# Браузер будет отправлять их только по HTTPS.
 CSRF_COOKIE_SECURE = not DEBUG
 
-# (Опционально, но рекомендуется)
-# Если мы хотим, чтобы все запросы автоматически перенаправлялись на HTTPS
-# на уровне Django (в дополнение к Nginx).
-# SECURE_SSL_REDIRECT = not DEBUG
+# Автоматически перенаправляем все запросы на HTTPS на уровне Django (в дополнение к Nginx).
+SECURE_SSL_REDIRECT = not DEBUG
 
-# ======================================================================
 
 # ======================================================================
 # НАСТОЙКИ ДЛЯ DOCKER.
