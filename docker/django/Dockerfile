@@ -28,12 +28,6 @@ ENV PATH="/root/.local/bin:${PATH}"
 # Глобально отключаем создание виртуальных окружений для PDM.
 RUN pdm config python.use_venv false
 
-# ?
-# ENV PDM_VENV_IN_PROJECT=false
-# ENV PDM_USE_VENV=false
-# ENV PDM_IGNORE_VENV=1
-# ENV PDM_IGNORE_VENV_WARNING=1
-
 # Устанавливаем рабочую директорию.
 WORKDIR /app
 
@@ -43,12 +37,6 @@ COPY pyproject.toml pdm.lock ./
 
 # Устанавливаем production-зависимости.
 RUN pdm install --prod --no-editable
-
-# # --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
-# # Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
-# # Мы сможем подключиться к нему и посмотреть, что внутри.
-# CMD ["/bin/sh", "-c", "sleep 1d"]
-
 
 # ==============================================================================
 # Этап 2: "Runner" — Финальный, чистый образ для запуска приложения.
