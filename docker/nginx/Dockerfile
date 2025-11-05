@@ -12,8 +12,7 @@ RUN apk --no-cache add openssl
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Копируем кастомный конфигурационный файл.
-# COPY ./docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./docker/nginx/nginx.conf /etc/nginx/conf.d/crm.conf
+COPY ./docker/nginx/nginx.conf /etc/nginx/nginx.conf
 
 # Создаем директории для логов Nginx и даем права пользователю nginx.
 # Это гарантирует, что Nginx сможет писать в свои лог-файлы.

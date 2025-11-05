@@ -97,7 +97,7 @@ END
 for service in "$@"; do
     case $service in
         postgres)
-            wait_for_postgres
+            wait_for_db
             ;;
         redis)
             wait_for_redis
