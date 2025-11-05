@@ -1,7 +1,8 @@
 # === Docker ===
+.dockerignore
+docker/
 Dockerfile
 docker-compose.yml
-.dockerignore
 docker-compose.override.yml
 docker-compose.local.yml
 
@@ -9,11 +10,20 @@ docker-compose.local.yml
 logs/
 uploads/
 staticfiles/
-postgres_data/
-redis_data/
-clamav_data/
-certs_data/
-nginx_log_data/
+
+# === Scripts ===
+scripts/
+
+# === Dev & CI/CD ===
+.idea/
+.vscode/
+
+_data_migration_template.py
+.github/
+.pre-commit-config.yaml
+pytest.ini
+README.md
+test_virus.txt
 
 # === OS ===
 *.log
@@ -49,11 +59,6 @@ ENV
 *.dump
 # Тестовая БД, если создавалась локально
 test.db
-
-# === IDE ===
-.idea
-# VS Code (опционально)
-.vscode
 
 # === Security certificates ===
 *.key
