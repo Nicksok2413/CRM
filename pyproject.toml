@@ -5,9 +5,6 @@
 [tool.pdm]
 distribution = false
 
-[tool.pdm.strategy]
-use_venv = false
-
 [project]
 name = "CRM"
 version = "0.1.0"

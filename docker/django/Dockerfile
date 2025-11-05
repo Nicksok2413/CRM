@@ -29,18 +29,17 @@ RUN wget -O su-exec.tar.gz https://github.com/ncopa/su-exec/archive/master.tar.g
 RUN curl -sSL https://pdm-project.org/install-pdm.py | python3 -
 # Добавляем путь к pdm в переменную окружения PATH.
 ENV PATH="/root/.local/bin:${PATH}"
+# Глобально отключаем создание виртуальных окружений для PDM.
+RUN pdm config python.use_venv false
 
 # ?
-ENV PDM_VENV_IN_PROJECT=false
-ENV PDM_USE_VENV=false
-ENV PDM_IGNORE_VENV=1
-ENV PDM_IGNORE_VENV_WARNING=1
+# ENV PDM_VENV_IN_PROJECT=false
+# ENV PDM_USE_VENV=false
+# ENV PDM_IGNORE_VENV=1
+# ENV PDM_IGNORE_VENV_WARNING=1
 
 # Устанавливаем рабочую директорию.
 WORKDIR /app
-
-# Глобально отключаем создание виртуальных окружений для PDM.
-# RUN pdm config python.use_venv false
 
 # Копируем только файлы, определяющие зависимости.
 # Этот слой будет кэшироваться и не будет пересобираться, пока pyproject.toml или pdm.lock не изменятся.
@@ -49,10 +48,10 @@ COPY pyproject.toml pdm.lock ./
 # Устанавливаем production-зависимости.
 RUN pdm install --prod --no-editable
 
-# # --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
-# # Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
-# # Мы сможем подключиться к нему и посмотреть, что внутри.
-# CMD ["/bin/sh", "-c", "sleep 1d"]
+# --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
+# Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
+# Мы сможем подключиться к нему и посмотреть, что внутри.
+CMD ["/bin/sh", "-c", "sleep 1d"]
 
 
 # ==============================================================================
@@ -85,6 +84,7 @@ COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/su-exec
 # Копируем установленные Python-зависимости из этапа "builder" в отдельную папку /app/lib.
 # Это делает все библиотеки доступными для Python, без активации .venv.
 COPY --from=builder /app/__pypackages__/3.12/lib/. /app/lib/
+# COPY --from=builder /usr/local/lib/python3.12/site-packages/. /app/lib/
 
 # Копируем entrypoint-скрипты.
 COPY ./docker/celery/beat/entrypoint.sh /docker/celery/beat/entrypoint.sh
