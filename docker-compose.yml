@@ -155,24 +155,24 @@ services:
     networks:
       - crm_network
 
-#  grafana:
-#    image: grafana/grafana-oss:latest
-#    container_name: crm_grafana
-#    volumes:
-#      - grafana_data:/var/lib/grafana  # Монтируем том для хранения данных Grafana (настройки, пользователи, дашборды)
-#      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/:ro  # Монтируем provisioning для автонастройки при старте (только для чтения)
-#      - ./docker/grafana/dashboards/:/etc/grafana/provisioning/dashboards/:ro  # Монтируем директорию с JSON дашбордами для provisioning (только для чтения)
-#    environment:
-#      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}  # admin - по умолчанию
-#      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # admin - по умолчанию
-#      GF_USERS_ALLOW_SIGN_UP: "false"  # Отключить регистрацию новых пользователей
-#    ports:
-#      - "3000:3000" # Пробрасываем порт для доступа к UI Grafana
-#    depends_on:
-#      - prometheus  # Запускаем Grafana после Prometheus
-#    restart: unless-stopped
-#    networks:
-#      - crm_network
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: crm_grafana
+    volumes:
+      - grafana_data:/var/lib/grafana  # Монтируем том для хранения данных Grafana (настройки, пользователи, дашборды)
+      - ./docker/grafana/provisioning/:/etc/grafana/provisioning/:ro  # Монтируем provisioning для автонастройки при старте (только для чтения)
+      - ./docker/grafana/dashboards/:/etc/grafana/provisioning/dashboards/:ro  # Монтируем директорию с JSON дашбордами для provisioning (только для чтения)
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}  # admin - по умолчанию
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # admin - по умолчанию
+      GF_USERS_ALLOW_SIGN_UP: "false"  # Отключить регистрацию новых пользователей
+    ports:
+      - "3000:3000" # Пробрасываем порт для доступа к UI Grafana
+    depends_on:
+      - prometheus  # Запускаем Grafana после Prometheus
+    restart: unless-stopped
+    networks:
+      - crm_network
 
 # Определяем все тома для хранения персистентных данных.
 volumes:
