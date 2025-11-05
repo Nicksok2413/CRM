@@ -47,5 +47,4 @@ su-exec "${APP_USER}" python manage.py collectstatic --noinput
 
 # Запускаем основной процесс Gunicorn от имени appuser.
 echo "-> (Django Entrypoint) Запуск основного процесса (Gunicorn) от пользователя ${APP_USER}..."
-#exec su-exec "${APP_USER}" "$@"
-exec su-exec "${APP_USER}" /app/lib/gunicorn config.wsgi:application -c /app/docker/django/gunicorn.conf.py
+exec su-exec "${APP_USER}" "$@"

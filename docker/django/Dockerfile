@@ -9,11 +9,7 @@ FROM python:3.12-slim as builder
 # - build-essential, wget, ca-certificates: для компиляции su-exec.
 # `rm -rf /var/lib/apt/lists/*` — удаляем списки пакетов.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        curl \
-        build-essential \
-        wget \
-        ca-certificates \
+    apt-get install -y --no-install-recommends curl build-essential wget ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Компилируем su-exec — утилиту для безопасного понижения привилегий с root до обычного пользователя.
@@ -48,10 +44,10 @@ COPY pyproject.toml pdm.lock ./
 # Устанавливаем production-зависимости.
 RUN pdm install --prod --no-editable
 
-# --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
-# Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
-# Мы сможем подключиться к нему и посмотреть, что внутри.
-CMD ["/bin/sh", "-c", "sleep 1d"]
+# # --- ВРЕМЕННЫЙ БЛОК ДЛЯ ОТЛАДКИ ---
+# # Эта команда запустит бесконечный цикл, который не даст builder'у завершиться.
+# # Мы сможем подключиться к нему и посмотреть, что внутри.
+# CMD ["/bin/sh", "-c", "sleep 1d"]
 
 
 # ==============================================================================
@@ -81,10 +77,9 @@ WORKDIR /app
 # Копируем скомпилированный `su-exec` из этапа "builder".
 COPY --from=builder /usr/local/bin/su-exec /usr/local/bin/su-exec
 
-# Копируем установленные Python-зависимости из этапа "builder" в отдельную папку /app/lib.
+# Копируем установленные Python-зависимости из этапа "builder" в папку /app/lib.
 # Это делает все библиотеки доступными для Python, без активации .venv.
 COPY --from=builder /app/__pypackages__/3.12/lib/. /app/lib/
-# COPY --from=builder /usr/local/lib/python3.12/site-packages/. /app/lib/
 
 # Копируем entrypoint-скрипты.
 COPY ./docker/celery/beat/entrypoint.sh /docker/celery/beat/entrypoint.sh
