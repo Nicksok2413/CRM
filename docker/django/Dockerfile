@@ -89,7 +89,7 @@ RUN addgroup --system appgroup && adduser --system --ingroup appgroup --no-creat
 # Меняем владельца рабочей директории на appuser.
 RUN chown appuser:appgroup /app
 
-# Копируем весь код нашего приложения, сразу устанавливая правильного владельца.
+# Копируем весь код приложения, сразу устанавливая правильного владельца.
 COPY --chown=appuser:appgroup . .
 
 # Сообщаем Docker, что контейнер будет слушать порт 8000.
