@@ -34,7 +34,7 @@ def create_user_with_role(db: Any) -> Callable[[str, str], User]:
         except Group.DoesNotExist:
             pytest.fail(f"Тест не может быть выполнен: группа '{role_name}' не была создана миграциями.")
 
-        # 3. Добавляем пользователя в группу.
+        # Добавляем пользователя в группу.
         user.groups.add(group)
 
         return user
