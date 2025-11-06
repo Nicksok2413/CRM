@@ -107,7 +107,7 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
     # Активные клиенты: считаем тех, у кого есть текущий активный контракт.
     active_clients_count = sum(1 for lead in all_leads_list if lead.active_contract)
 
-    # Рентабельность
+    # Рентабельность.
     profit = float((total_revenue / campaign.budget) * 100) if campaign.budget > 0 else None
 
     # 4. Фильтруем список для отображения в таблице.
@@ -137,7 +137,7 @@ def get_detailed_stats_for_campaign(campaign: AdCampaign, status_filter: str) ->
             if not lead.contracts_history.exists() and lead.status != PotentialClient.Status.LOST
         ]
 
-    # Возвращаем результат.
+    # 5. Возвращаем результат.
     return {
         "leads_list": display_leads_list,  # В таблицу идет отфильтрованный список
         "total_leads": len(all_leads_list),  # В KPI идет общее количество привлеченных лидов
