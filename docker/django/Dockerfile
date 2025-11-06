@@ -46,7 +46,7 @@ FROM python:3.12-slim
 
 # Устанавливаем только те системные пакеты, которые необходимы для работы приложения:
 # - libpq-dev: для работы драйвера psycopg.
-# `rm -rf /var/lib/apt/lists/*` — для уменьшения размера образа.
+# `rm -rf /var/lib/apt/lists/*` — удаляем списки пакетов для уменьшения размера образа.
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libpq-dev && \
     rm -rf /var/lib/apt/lists/*
