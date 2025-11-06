@@ -152,16 +152,20 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # ======================================================================
 
+# В режиме разработки используем локальную базу PostgreSQL.
+DB_HOST = "localhost" if DEBUG else config("DB_NAME", default="db")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": config("DB_NAME"),
         "USER": config("DB_USER"),
         "PASSWORD": config("DB_PASSWORD"),
-        "HOST": config("DB_HOST"),
+        "HOST": DB_HOST,
         "PORT": config("DB_PORT", cast=int),
     }
 }
+
 
 # ======================================================================
 
