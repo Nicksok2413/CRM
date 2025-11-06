@@ -159,7 +159,7 @@ DATABASES = {
         "USER": config("DB_USER"),
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST"),
-        "PORT": config("DB_PORT", cast=int),  # `cast=int` преобразует строку из .env в число
+        "PORT": config("DB_PORT", cast=int),
     }
 }
 
@@ -285,6 +285,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # ======================================================================
 # НАСТРОЙКИ МЕДИА ФАЙЛОВ.
 # ======================================================================
+
 MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "uploads"
@@ -308,6 +309,7 @@ MESSAGE_TAGS = {
 # НАСТРОЙКИ ЛОГИРОВАНИЯ.
 # https://docs.djangoproject.com/en/5.2/topics/logging/
 # ======================================================================
+
 LOGS_DIR = BASE_DIR / "logs"
 
 if not LOGS_DIR.exists():
@@ -460,7 +462,7 @@ CACHE_TTL = 60 * 10  # 10 минут
 # ======================================================================
 
 # URL брокера сообщений. Celery будет отправлять сюда задачи.
-# Мы используем базу данных Redis №2, чтобы не смешивать задачи с кэшем.
+# Используем базу данных Redis №2, чтобы не смешивать задачи с кэшем.
 CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/2"
 
 # URL бэкенда для хранения результатов. Позволяет отслеживать статус задач.
@@ -555,5 +557,5 @@ MAX_IMAGE_SIZE_MB = 2
 # Максимальный размер загружаемого документа (в МБ).
 MAX_DOCUMENT_SIZE_MB = 10
 
-# Читаем количество дней из .env, преобразуя значение в целое число (int).
+# Количество дней до истечения контракта (для отправки уведомлений ответственным менеджерам).
 CONTRACT_EXPIRATION_NOTICE_DAYS = config("CONTRACT_EXPIRATION_NOTICE_DAYS", default=7, cast=int)
