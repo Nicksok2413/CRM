@@ -2,9 +2,6 @@
 # PDM
 # =================================================================
 
-[tool.pdm]
-distribution = false
-
 [project]
 name = "CRM"
 version = "0.1.0"
@@ -13,7 +10,7 @@ authors = [
     {name = "Mikalai Sakalouski", email = "nicksok2413@gmail.com"},
 ]
 dependencies = [
-    "Django==5.2.7",
+    "Django==5.2.8",
     "django-filter==25.2",
     "django-guardian==3.2.0",
     "django-crispy-forms==2.4",
@@ -26,7 +23,7 @@ dependencies = [
     "pillow==12.0.0",
     "phonenumberslite==9.0.17",
     "django-clamd==1.0.0",
-    "sentry-sdk[django]==2.42.1",
+    "sentry-sdk[django]==2.43.0",
     "gunicorn>=23.0.0",
     "gevent>=25.9.1",
     "django-axes>=8.0.0",
@@ -43,7 +40,7 @@ build-backend = "pdm.backend"
 
 [dependency-groups]
 dev = [
-    "Django==5.2.7",
+    "Django==5.2.8",
     "django-filter==25.2",
     "django-guardian==3.2.0",
     "django-crispy-forms==2.4",
@@ -56,51 +53,22 @@ dev = [
     "pillow==12.0.0",
     "phonenumberslite==9.0.17",
     "django-clamd==1.0.0",
-    "sentry-sdk[django]==2.42.1",
+    "sentry-sdk[django]==2.43.0",
+    "gunicorn>=23.0.0",
+    "gevent>=25.9.1",
+    "django-axes>=8.0.0",
+    "django-prometheus>=2.4.1",
     "factory-boy==3.3.3",
     "Faker==37.12.0",
     "pytest==8.4.2",
     "pytest-django==4.11.1",
     "pre-commit==4.3.0",
-    "ruff==0.14.2",
+    "ruff==0.14.3",
     "mypy==1.18.2",
     "django-stubs==5.2.7",
 ]
 
 # Скрипты
-[tool.pdm.scripts]
-# Запуск сервера разработки.
-run = "python manage.py runserver"
-
-# Скрипты для работы с миграциями.
-clear-migrations = "bash scripts/clear_migrations.sh"  # Скрипт для очистки всех миграций
-makemigrations = "python manage.py makemigrations"  # Создание миграций
-create-data-migration = "bash scripts/create_data_migration.sh"  # Скрипт для создания кастомной миграции
-migrate = "python manage.py migrate"  # Применение миграций
-
-# Наполнение БД правдоподобными данными для тестирования и разработки.
-populate = "python manage.py populate_db --count 20"  # `--count` - количество создаваемых записей
-
-# Запуск всех проверок качества кода.
-lint = "ruff check apps/"  # Линтер Ruff
-format = "ruff format apps/"  # Форматер Ruff
-types = "mypy apps/"  # Статический типизатор mypy
-
-# Запуск тестов.
-test = "pytest"
-
-# Команда, которая запускает все проверки последовательно.
-# Определяем 'check' как 'composite' скрипт.
-check = { "composite" = ["lint", "format", "types", "test"] }
-
-# Скрипты для запуска Celery (для уведомлений).
-celery-worker = "celery -A config.celery worker --loglevel=info"
-celery-beat = "celery -A config.celery beat --loglevel=info"
-
-
-# =================================================================
-# Конфигурация Ruff (Линтер + Форматер).
-# =================================================================
 [tool.ruff]
 # Устанавливаем максимальную длину строки.
 line-length = 120
@@ -152,3 +120,40 @@ exclude = ["migrations/", "tests/"]
 [tool.django-stubs]
 # Указываем путь к настройкам Django.
 django_settings_module = "config.settings"
+
+[tool.pdm]
+distribution = false
+
+[tool.pdm.scripts]
+# Запуск сервера разработки.
+run = "python manage.py runserver"
+
+# Скрипты для работы с миграциями.
+clear-migrations = "bash scripts/clear_migrations.sh"  # Скрипт для очистки всех миграций
+makemigrations = "python manage.py makemigrations"  # Создание миграций
+create-data-migration = "bash scripts/create_data_migration.sh"  # Скрипт для создания кастомной миграции
+migrate = "python manage.py migrate"  # Применение миграций
+
+# Наполнение БД правдоподобными данными для тестирования и разработки.
+populate = "python manage.py populate_db --count 20"  # `--count` - количество создаваемых записей
+
+# Запуск всех проверок качества кода.
+lint = "ruff check apps/"  # Линтер Ruff
+format = "ruff format apps/"  # Форматер Ruff
+types = "mypy apps/"  # Статический типизатор mypy
+
+# Запуск тестов.
+test = "pytest"
+
+# Команда, которая запускает все проверки последовательно.
+# Определяем 'check' как 'composite' скрипт.
+check = { "composite" = ["lint", "format", "types", "test"] }
+
+# Скрипты для запуска Celery (для уведомлений).
+celery-worker = "celery -A config.celery worker --loglevel=info"
+celery-beat = "celery -A config.celery beat --loglevel=info"
+
+
+# =================================================================
+# Конфигурация Ruff (Линтер + Форматер).
+# =================================================================
