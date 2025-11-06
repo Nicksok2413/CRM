@@ -32,16 +32,15 @@ def check_expiring_contracts() -> None:
     days_to_expire = settings.CONTRACT_EXPIRATION_NOTICE_DAYS
     target_date = timezone.now().date() + timedelta(days=days_to_expire)
 
-    # Строим "тяжелый" запрос к БД.
-    # Мы ищем только "активные" контракты, т.е. те, у которых:
+    # Строим запрос к БД.
+    # Ищем только "активные" контракты, т.е. те, у которых:
     # - сам контракт не "мягко удален" (`is_deleted=False`).
     # - связанная запись `ActiveClient` не "мягко удалена".
     expiring_contracts = (
         Contract.objects.filter(end_date=target_date, is_deleted=False, active_client__is_deleted=False)
         .select_related(
             "active_client__potential_client__manager"
-            # Оптимизация: одним запросом получаем контракт, клиента, лида и менеджера.
-        )
+        )  # Одним запросом получаем контракт, клиента, лида и менеджера
         .order_by("active_client__potential_client__manager__id")  # Сортируем по менеджеру
     )
 
