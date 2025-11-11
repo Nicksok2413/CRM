@@ -69,62 +69,8 @@ dev = [
 ]
 
 # Скрипты
-[tool.ruff]
-# Устанавливаем максимальную длину строки.
-line-length = 120
-
-# Указываем директории, которые Ruff должен игнорировать.
-exclude = [
-    ".git",
-    ".idea",
-    ".venv",
-    "venv",
-    "*/migrations/*",
-    "*/tests/*",
-]
-
-# Настраиваем линтер.
-[tool.ruff.lint]
-# Выбираем наборы правил. 'E' и 'F' - это стандарт (pycodestyle, pyflakes).
-# 'I' - для сортировки импортов (isort).
-select = ["E", "F", "W", "I"]
-
-# Игнорируем конкретные правила, если они мешают.
-# Например, E501 (line too long) можно отключить.
-ignore = ["E501"]
-
-
-# =================================================================
-# Конфигурация Mypy (Проверка типов).
-# =================================================================
-[tool.mypy]
-# Включаем плагин для поддержки Django.
-plugins = "mypy_django_plugin.main"
-
-# Включаем строгие проверки.
-check_untyped_defs = true
-disallow_untyped_defs = true
-warn_return_any = true
-warn_unused_ignores = true
-
-# Игнорировать библиотеки, у которых нет аннотаций типов.
-ignore_missing_imports = true
-
-# Директории для исключения из проверки.
-exclude = ["migrations/", "tests/"]
-
-
-# =================================================================
-# Конфигурация плагина Django-stubs.
-# =================================================================
-[tool.django-stubs]
-# Указываем путь к настройкам Django.
-django_settings_module = "config.settings"
-
-[tool.pdm]
-distribution = false
-
 [tool.pdm.scripts]
+
 # Запуск сервера разработки.
 run = "python manage.py runserver"
 
@@ -153,7 +99,58 @@ check = { "composite" = ["lint", "format", "types", "test"] }
 celery-worker = "celery -A config.celery worker --loglevel=info"
 celery-beat = "celery -A config.celery beat --loglevel=info"
 
+# =================================================================
+# Конфигурация Mypy (Проверка типов).
+# =================================================================
+[tool.mypy]
+# Включаем плагин для поддержки Django.
+plugins = "mypy_django_plugin.main"
+
+# Включаем строгие проверки.
+check_untyped_defs = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+
+# Игнорировать библиотеки, у которых нет аннотаций типов.
+ignore_missing_imports = true
+
+# Директории для исключения из проверки.
+exclude = ["migrations/", "tests/"]
+
+# =================================================================
+# Конфигурация плагина Django-stubs.
+# =================================================================
+[tool.django-stubs]
+# Указываем путь к настройкам Django.
+django_settings_module = "config.settings"
+
+[tool.pdm]
+distribution = false
 
 # =================================================================
 # Конфигурация Ruff (Линтер + Форматер).
 # =================================================================
+[tool.ruff]
+# Устанавливаем максимальную длину строки.
+line-length = 120
+
+# Указываем директории, которые Ruff должен игнорировать.
+exclude = [
+    ".git",
+    ".idea",
+    ".venv",
+    "venv",
+    "*/migrations/*",
+    "*/tests/*",
+]
+
+# Настраиваем линтер.
+[tool.ruff.lint]
+# Выбираем наборы правил. 'E' и 'F' - это стандарт (pycodestyle, pyflakes).
+# 'I' - для сортировки импортов (isort).
+select = ["E", "F", "W", "I"]
+
+# Игнорируем конкретные правила, если они мешают.
+# Например, E501 (line too long) можно отключить.
+ignore = ["E501"]
