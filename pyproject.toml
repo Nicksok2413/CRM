@@ -5,7 +5,7 @@
 [project]
 name = "CRM"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = "A lightweight CRM system tailored for small business client management and workflow tracking."
 authors = [
     {name = "Mikalai Sakalouski", email = "nicksok2413@gmail.com"},
 ]
